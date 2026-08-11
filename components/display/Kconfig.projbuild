@@ -1,0 +1,18 @@
+menu "Display Interface"
+
+    choice DISPLAY_IFACE
+        prompt "Display Interface"
+        default DISPLAY_IFACE_RGB
+
+        config DISPLAY_IFACE_RGB
+            bool "RGB (16-bit parallel)"
+
+        config DISPLAY_IFACE_MIPI
+            bool "MIPI DSI"
+            depends on IDF_TARGET_ESP32P4
+            help
+                MIPI DSI is only available on ESP32-P4.
+
+    endchoice
+
+endmenu
