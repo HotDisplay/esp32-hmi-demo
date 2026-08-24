@@ -2,6 +2,7 @@
 
 /* ===== Board: ESP32P4-DEMO-A02_V0 (ESP32-P4 Driver Board) ===== */
 
+#include "esp_io_expander.h"
 #include "driver/gpio.h"
 
 #define BSP_BOARD_NAME          "ESP32P4-DEMO-A02_V0"
@@ -14,6 +15,8 @@
 
 /* Display enable (optional, -1 if not used) */
 #define BSP_DISP_EN             -1
+#define BSP_DISP_RST             IO_EXPANDER_PIN_NUM_3
+#define BSP_DISP_SLEEP           IO_EXPANDER_PIN_NUM_4
 
 /* I2C0 (touch) */
 #define BSP_I2C0_SDA             GPIO_NUM_27
@@ -25,8 +28,9 @@
 #define BSP_I2C1_SCL             GPIO_NUM_54
 
 /* Touch interrupt / reset (from FPC) */
+#define BSP_CTP_RST_ON_EXPANDER
 #define BSP_CTP_INT             GPIO_NUM_52
-#define BSP_CTP_RST             GPIO_NUM_5 //IO expander P01
+#define BSP_CTP_RST             IO_EXPANDER_PIN_NUM_1 //IO expander P01
 
 /* RGB data pins */
 #define RGB_LCD_DATA_BITS       16            /* RGB 565 */
@@ -70,3 +74,4 @@
 #define BSP_SD2_D3              GPIO_NUM_51
 #define BSP_SD2_CLK             GPIO_NUM_47
 #define BSP_SD2_CMD             GPIO_NUM_46
+#define BSP_C6_RESET            IO_EXPANDER_PIN_NUM_0

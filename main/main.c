@@ -29,20 +29,7 @@ void app_main(void) {
     ESP_LOGI(TAG, "Panel: %s", bsp_panel_name());
     ESP_LOGI(TAG, "Screen: %dx%d", bsp_get_screen_width(), bsp_get_screen_height());
 
-#ifdef BSP_USE_IO_EXPANDER
-    esp_io_expander_handle_t io_expander = NULL;
-    i2c_master_bus_handle_t io_expander_i2c_bus = NULL;
 
-    const i2c_master_bus_config_t io_expander_i2c_config = {
-    .i2c_port = I2C_NUM_1,
-    .sda_io_num = BSP_I2C1_SDA,
-    .scl_io_num = BSP_I2C1_SCL,
-    .clk_source = I2C_CLK_SRC_DEFAULT,
-    };
-
-    i2c_new_master_bus(&io_expander_i2c_config, &io_expander_i2c_bus);
-    esp_io_expander_new_i2c_tca95xx_16bit(io_expander_i2c_bus, ESP_IO_EXPANDER_I2C_TCA9555_ADDRESS_010, &io_expander);
-#endif 
 
     /* Initialize BSP (backlight + touch) */
     esp_lcd_panel_handle_t panel = NULL;
@@ -55,21 +42,6 @@ void app_main(void) {
 
     /* Start LVGL */
     lvgl_init();
-
-    // esp_io_expander_set_dir(io_expander, IO_EXPANDER_PIN_NUM_2, IO_EXPANDER_OUTPUT);
-    // // Print state
-    // esp_io_expander_print_state(io_expander);
-
-    // for (int i = 0; i < 5; i++) {
-    //     // Set level to 0
-    //     ESP_LOGI(TAG, "Set level to 0");
-    //     esp_io_expander_set_level(io_expander, IO_EXPANDER_PIN_NUM_2, 0);
-    //     vTaskDelay(pdMS_TO_TICKS(1000));
-    //     // Set level to 1
-    //     ESP_LOGI(TAG, "Set level to 1");
-    //     esp_io_expander_set_level(io_expander, IO_EXPANDER_PIN_NUM_2, 1);
-    //     vTaskDelay(pdMS_TO_TICKS(1000));
-    // }
 
     /* Init Wi-Fi*/
 
