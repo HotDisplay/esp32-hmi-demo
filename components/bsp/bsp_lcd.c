@@ -1,5 +1,4 @@
 #include "bsp_lcd.h"
-#include "display.h"
 
 #include "esp_lcd_touch.h"
 #include "esp_lcd_touch_gt911.h"
@@ -50,11 +49,12 @@ static void bsp_backlight_pwm_init(void) {
     ledc_channel_config(&ledc_channel);
 }
 
+/* 设置背光亮度 */
 static void bsp_backlight_set_level(uint32_t level) {
 #if BSP_BACKLIGHT_EN >= 0
     gpio_set_level(BSP_BACKLIGHT_EN, level);
 #endif
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 100);
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 200);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
 }
 
@@ -67,8 +67,8 @@ static esp_err_t bsp_touch_init_internal(esp_lcd_touch_handle_t *out_touch) {
 
     i2c_master_bus_config_t i2c_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
-        .sda_io_num = BSP_I2C_SDA,
-        .scl_io_num = BSP_I2C_SCL,
+        .sda_io_num = BSP_I2C0_SDA,
+        .scl_io_num = BSP_I2C0_SCL,
         .i2c_port = I2C_NUM_0,
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = false,
@@ -87,8 +87,13 @@ static esp_err_t bsp_touch_init_internal(esp_lcd_touch_handle_t *out_touch) {
         .y_max = BSP_TOUCH_Y_MAX,
         .rst_gpio_num = BSP_CTP_RST,
         .int_gpio_num = BSP_CTP_INT,
-        .levels = { .reset = 0, .interrupt = 0 },
-        .flags = { .swap_xy = BSP_TOUCH_SWAP_XY },
+        .levels = {
+            .reset = 0,
+            .interrupt = 0
+        },
+        .flags = {
+            .swap_xy = BSP_TOUCH_SWAP_XY
+        },
         .driver_data = &gt911_cfg,
     };
 
@@ -105,25 +110,31 @@ static esp_err_t bsp_touch_init_internal(esp_lcd_touch_handle_t *out_touch) {
 
 esp_err_t bsp_init(esp_lcd_panel_handle_t *out_panel, esp_lcd_touch_handle_t *out_touch) {
     ESP_LOGI(TAG, "Initializing BSP for board: %s", BSP_BOARD_NAME);
-    ESP_LOGI(TAG, "LCD: %dx%d, PCLK: %lu Hz", LCD_H_RES, LCD_V_RES, LCD_PIXEL_CLOCK_HZ);
+    ESP_LOGI(TAG, "LCD: %dx%d", LCD_H_RES, LCD_V_RES);
 
     /* 1. Backlight setup */
     bsp_backlight_init();
     bsp_backlight_pwm_init();
     bsp_backlight_set_level(LCD_BACKLIGHT_ON);
 
-    /* 2. Display init (RGB / MIPI / ... via display component) */
-    ESP_RETURN_ON_ERROR(display_init_rgb(&panel_handle), TAG, "display init failed");
-
-    /* 3. Touch */
+    /* 2. Touch (display panel is initialized by the display component via
+     *    display_init(), called from the application, to avoid a circular
+     *    dependency between bsp and display). */
+#if CONFIG_DISPLAY_USE_TOUCHPAD
     ESP_RETURN_ON_ERROR(bsp_touch_init_internal(&touch_handle), TAG, "touch init failed");
+#endif
 
     /* Output handles */
-    if (out_panel) *out_panel = panel_handle;
     if (out_touch) *out_touch = touch_handle;
 
-    ESP_LOGI(TAG, "BSP init complete");
+    ESP_LOGI(TAG, "BSP init complete (backlight + touch; display via display_init)");
     return ESP_OK;
+}
+
+/* Set the panel handle produced by display_init() so other modules
+ * (e.g. lv_init.c) can access it through the extern global. */
+void bsp_set_panel_handle(esp_lcd_panel_handle_t panel) {
+    panel_handle = panel;
 }
 
 const char *bsp_board_name(void) {
@@ -134,5 +145,5 @@ const char *bsp_panel_name(void) {
     return BSP_PANEL_NAME;
 }
 
-uint16_t bsp_get_screen_width(void)  { return LCD_H_RES; }
+uint16_t bsp_get_screen_width(void) { return LCD_H_RES; }
 uint16_t bsp_get_screen_height(void) { return LCD_V_RES; }

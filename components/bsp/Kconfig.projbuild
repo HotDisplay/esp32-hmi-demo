@@ -1,11 +1,15 @@
 menu "BSP Board Selection"
 
     choice BSP_BOARD
-        prompt "Board (pinout)"
-        default BSP_BOARD_H050A29_ESP_STDRGB
+        prompt "Board Select"
 
         config BSP_BOARD_H050A29_ESP_STDRGB
             bool "HTM-H050A29-ESP-StdRGB_V0"
+            depends on IDF_TARGET_ESP32S3
+
+        config BSP_BOARD_ESP32P4_DEMO_A02
+            bool "ESP32P4-DEMO-A02_V0"
+            depends on IDF_TARGET_ESP32P4
     endchoice
 
 endmenu

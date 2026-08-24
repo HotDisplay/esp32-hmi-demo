@@ -4,15 +4,16 @@
 
 #define BSP_PANEL_NAME          "H050A29 (5.0 inch / 800x480)"
 
-#define LCD_PIXEL_CLOCK_HZ      (18 * 1000 * 1000)
+#define LCD_PIXEL_CLOCK_HZ      (22 * 1000 * 1000)
 #define LCD_H_RES               800
 #define LCD_V_RES               480
-#define LCD_HSYNC               4
-#define LCD_HBP                 8
-#define LCD_HFP                 8
-#define LCD_VSYNC               4
+#define LCD_HSYNC               20
+#define LCD_HBP                 89
+#define LCD_HFP                 90
+#define LCD_VSYNC               8
 #define LCD_VBP                 8
-#define LCD_VFP                 8
+#define LCD_VFP                 20
+
 #define LCD_NUM_FB              2
 #define LCD_PCLK_ACTIVE_NEG     true
 

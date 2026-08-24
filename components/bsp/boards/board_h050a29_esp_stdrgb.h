@@ -16,8 +16,8 @@
 #define BSP_DISP_EN             -1
 
 /* I2C (touch) */
-#define BSP_I2C_SDA             GPIO_NUM_42
-#define BSP_I2C_SCL             GPIO_NUM_41
+#define BSP_I2C0_SDA             GPIO_NUM_42
+#define BSP_I2C0_SCL             GPIO_NUM_41
 
 /* Touch interrupt / reset (from FPC) */
 #define BSP_CTP_INT             GPIO_NUM_2
@@ -28,6 +28,8 @@
 #define BSP_UART1_TX            GPIO_NUM_5
 
 /* RGB data pins */
+#define RGB_LCD_DATA_BITS       16            /* RGB 565 */
+
 #define BSP_LCD_HSYNC           GPIO_NUM_17
 #define BSP_LCD_VSYNC           GPIO_NUM_16
 #define BSP_LCD_DE              GPIO_NUM_15

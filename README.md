@@ -1,145 +1,203 @@
+<div align="center">
+
 # HOTLCD ESP32 Display Driver
 
-## 深圳市鑫洪泰电子科技有限公司 · HotDisplay
+### 深圳市鑫洪泰电子科技有限公司 · HotDisplay
 
-**HOTLCD display driver firmware** — unified sample for driving HOTLCD TFT panels across the ESP32 family.  
-**HOTLCD 显示屏驱动固件** — ESP32 全系列统一工程，支持 RGB / MIPI / SPI / 8080 多接口。
+[![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v6.0.0-185FA5?style=flat-square)](https://docs.espressif.com/projects/esp-idf/)
+[![LVGL](https://img.shields.io/badge/LVGL-9.x-7F77DD?style=flat-square)](https://lvgl.io/)
+[![ESP32-S3](https://img.shields.io/badge/ESP32--S3-✓-3B6D11?style=flat-square)]()
+[![ESP32-P4](https://img.shields.io/badge/ESP32--P4-✓-3B6D11?style=flat-square)]()
+[![License](https://img.shields.io/badge/License-CC0--1.0-888780?style=flat-square)](LICENSE)
 
-| ESP32 Chip | RGB | MIPI DSI | SPI | 8080 |
-|------------|-----|----------|-----|------|
-| ESP32-S3 | YES | — | — | Future |
-| ESP32-P4 | YES | YES | — | Future |
-
-Built on **LVGL**, board + interface + panel selected independently via `menuconfig`.  
-基于 **LVGL**，Board / Interface / Panel 三级独立菜单选配。
+</div>
 
 ---
 
-## Architecture / 架构
+> **HOTLCD display driver firmware** — unified sample for driving HOTLCD TFT panels across the ESP32 family.  
+> **HOTLCD 显示屏驱动固件** — ESP32 全系列统一工程，支持 RGB / MIPI / SPI / 8080 多接口。
+
+## Supported Chips & Interfaces
+
+| ESP32 Chip | RGB 16-bit | MIPI DSI | SPI | 8080 |
+|:----------:|:---------:|:-------:|:---:|:----:|
+| **ESP32-S3** | ✓ | — | — | Planned |
+| **ESP32-P4** | ✓ | ✓ | — | Planned |
+
+Built on **LVGL** — Board / Interface / Panel selected independently via `menuconfig`.  
+基于 **LVGL** — Board / Interface / Panel 三级独立菜单选配。
+
+---
+
+## Architecture
 
 ```
-menuconfig
-  |-- Chip Target      →  idf.py set-target (ESP32-S3 / ESP32-P4)
-  |-- BSP Board        →  选板子型号 (决定引脚 GPIO)
-  |-- Display Interface →  选显示接口 (RGB / MIPI / SPI / 8080)
-  |-- BSP Panel        →  选屏幕型号 (决定分辨率 + 时序 + 触摸)
-
-Board + Interface + Panel 三者独立组合。
-换接口 = menuconfig 换，换屏 = menuconfig 换，main/ 不动。
+┌─────────────────────────────────────────────────────────┐
+│  menuconfig                                             │
+│    Chip Target     →  idf.py set-target (S3 / P4)        │
+│    BSP Board       →  Board pinout (GPIO)               │
+│    Display Interface →  RGB / MIPI / SPI / 8080          │
+│    BSP Panel        →  Resolution + timing + touch       │
+└─────────────────────────────────────────────────────────┘
+              Board × Interface × Panel 独立组合
 ```
 
+### Project Structure
+
 ```
-components/
-  bsp/                   # 板子引脚定义
-    Kconfig              # Board 选板菜单
-    bsp_lcd.h / bsp_lcd.c
-    boards/
-      board_h050a29_esp_stdrgb.h    # ESP32-S3 板 (RGB)
-      board_xxx_p4.h                # ESP32-P4 板 (RGB+MIPI) [未来]
-
-  display/               # 显示接口驱动层 (NEW)
-    Kconfig              # Interface 选接口菜单
-    display.h            # 统一接口
-    display_rgb.c        # RGB parallel (S3 / P4)
-    display_mipi.c       # MIPI DSI (P4 only) [待实现]
-
-  panel/                 # 屏幕时序 + 触摸参数
-    Kconfig              # Panel 选屏菜单
-    panel.h
-    panels/
-      panel_h050a29.h    # 5.0" 800x480 GT911
-      panel_h070b26.h    # 7.0" 1024x600 GT911
-
-  main/                  # 应用层 (不依赖硬件)
-    main.c / lv_init.c
+esp-display-driver/
+├── main/                       # Application layer (hardware-agnostic)
+│   ├── main.c                  # Entry point → calls bsp_init()
+│   └── lv_init.c               # LVGL display binding
+│
+├── components/
+│   ├── bsp/                    # Board Support Package (pinout)
+│   │   ├── bsp_lcd.h           # Unified BSP interface
+│   │   ├── bsp_lcd.c           # Backlight + touch init
+│   │   ├── Kconfig.projbuild   # Board selection menu
+│   │   └── boards/
+│   │       └── board_h050a29_esp_stdrgb.h   # ESP32-S3 RGB board
+│   │
+│   ├── display/                # Display interface driver layer
+│   │   ├── display.h           # Unified interface
+│   │   ├── display_rgb.c       # RGB 16-bit parallel
+│   │   ├── display_mipi.c      # MIPI DSI (ESP32-P4) [WIP]
+│   │   └── Kconfig.projbuild   # Interface selection menu
+│   │
+│   └── panel/                  # Panel configuration (timing + touch)
+│       ├── panel.h             # Panel selector
+│       ├── Kconfig.projbuild   # Panel selection menu
+│       └── panels/
+│           ├── panel_h050a29.h # 5.0" 800×480 GT911
+│           └── panel_h070b26.h # 7.0" 1024×600 GT911
+│
+├── sdkconfig.defaults.esp32s3  # Pre-configured defaults
+├── partitions.csv              # Custom partition table
+└── README.md
 ```
 
 ---
 
-## Quick Start / 快速上手
+## Quick Start
 
-### Prerequisites / 环境
+### 1. Prerequisites
 
-- **ESP-IDF v6.0.0**
+- **ESP-IDF v6.0.0** ([install guide](https://docs.espressif.com/projects/esp-idf/en/v6.0.0/esp32s3/get-started/))
 - ESP32-S3 module with PSRAM (or ESP32-P4)
+- One HOTLCD driver board + panel
+
+### 2. Clone & Build
 
 ```bash
-git clone <repo-url>
-cd <repo>
+git clone https://github.com/HotDisplay/esp-display-driver.git
+cd esp-display-driver
 
 # Set target chip
-idf.py set-target esp32s3      # or esp32p4
+idf.py set-target esp32s3      # or: idf.py set-target esp32p4
 
-# Select Board / Interface / Panel via menuconfig
+# Configure: select Board + Interface + Panel
 idf.py menuconfig
+#   → BSP Board Selection
+#   → Display Interface
+#   → BSP Panel Selection
 
+# Build, flash, monitor
 idf.py build
-idf.py -p COMx flash monitor
+idf.py -p COM3 flash monitor    # Windows: COM3 / Linux: /dev/ttyUSB0
 ```
 
----
-
-## Supported Hardware / 支持硬件
-
-### Boards / 板卡
-
-| Board | Chip | RGB | MIPI |
-|-------|------|-----|------|
-| HTM-H050A29-ESP-StdRGB_V0 | ESP32-S3 | YES | — |
-
-### Panels / 屏幕
-
-| Panel | Size | Resolution | Interface | Touch |
-|-------|------|-----------|-----------|-------|
-| H050A29 | 5.0 inch | 800x480 | RGB565 | GT911 |
-| H070B26 | 7.0 inch | 1024x600 | RGB565 | GT911 |
+After flashing, the screen displays the **LVGL Widgets Demo**.  
+烧录后上电，屏幕显示 LVGL Widgets 示例界面。
 
 ---
 
-## Adding New Hardware / 新增硬件
+## Supported Hardware
 
-### New Board / 新板卡
+### Boards
 
-1. `components/bsp/boards/board_xxx.h` — GPIO pinout
-2. `components/bsp/Kconfig.projbuild` — add board entry
-3. `components/bsp/bsp_lcd.h` — add `#elif` include
+| Board | Chip | RGB | MIPI | Status |
+|-------|------|:---:|:----:|:------:|
+| HTM-H050A29-ESP-StdRGB_V0 | ESP32-S3 | ✓ | — | Active |
+| _more boards coming_ | ESP32-P4 | ✓ | ✓ | Planned |
 
-### New Panel / 新屏幕
+### Panels
 
-1. `components/panel/panels/panel_xxx.h` — timing + touch
-2. `components/panel/Kconfig.projbuild` — add panel entry
-3. `components/panel/panel.h` — add `#elif` include
+| Panel | Size | Resolution | Interface | Touch | Default |
+|-------|:----:|:----------:|:---------:|:-----:|:-------:|
+| H050A29 | 5.0" | 800×480 | RGB565 | GT911 | ✓ |
+| H070B26 | 7.0" | 1024×600 | RGB565 | GT911 | — |
 
-### New Interface / 新接口
-
-1. `components/display/display_xxx.c` — implement `display_init_xxx()`
-2. `components/display/Kconfig.projbuild` — add interface entry (with chip dependency)
-3. `components/bsp/bsp_lcd.c` — add `#elif CONFIG_DISPLAY_IFACE_XXX` dispatch
-
-**No changes to `main/` needed.** `main/` 不动。
+> Same board FPC connector is compatible with all listed RGB panels.  
+> 同一块板 FPC 座兼容以上所有 RGB 屏，仅需屏参不同。
 
 ---
 
-## Default SDK Config / 默认配置
+## Adding New Hardware
 
-`sdkconfig.defaults.esp32s3` — pre-configured defaults:
+### New Board
 
-- **PSRAM** — Octal mode, 80 MHz (required for RGB frame buffer)
-- **Bounce Buffer** — improves PCLK stability
-- **Partition** — custom 16 MB for ESP32-S3-WROOM-1-N16R8
-- **FreeRTOS** — 1000 Hz tick, dual core
+| Step | File | Action |
+|:----:|------|--------|
+| 1 | `components/bsp/boards/board_xxx.h` | Define GPIO pinout |
+| 2 | `components/bsp/Kconfig.projbuild` | Add `config BSP_BOARD_XXX` |
+| 3 | `components/bsp/bsp_lcd.h` | Add `#elif CONFIG_BSP_BOARD_XXX` |
+
+### New Panel
+
+| Step | File | Action |
+|:----:|------|--------|
+| 1 | `components/panel/panels/panel_xxx.h` | Define timing + touch |
+| 2 | `components/panel/Kconfig.projbuild` | Add `config BSP_PANEL_XXX` |
+| 3 | `components/panel/panel.h` | Add `#elif CONFIG_BSP_PANEL_XXX` |
+
+### New Interface
+
+| Step | File | Action |
+|:----:|------|--------|
+| 1 | `components/display/display_xxx.c` | Implement `display_init_xxx()` |
+| 2 | `components/display/Kconfig.projbuild` | Add interface + chip dependency |
+| 3 | `components/bsp/bsp_lcd.c` | Add `#elif` dispatch |
+
+> **`main/` never needs changes.** `main/` 一行不用改。
 
 ---
 
-## Contact / 联系我们
+## Default SDK Configuration
 
-**HOTLCD — 深圳市鑫洪泰电子科技有限公司**
+File: `sdkconfig.defaults.esp32s3`
 
-| Channel | Info |
-|---------|------|
-| Website 官网 | [https://cn.display-lcd.com](https://cn.display-lcd.com) |
-| English 英文站 | [https://www.hotlcd.com](https://www.hotlcd.com) |
-| GitHub | [https://github.com/HotDisplay](https://github.com/HotDisplay) |
-| Sales 销售 | [lcd@hotlcd.com](mailto:lcd@hotlcd.com) |
+| Config | Value | Purpose |
+|--------|-------|---------|
+| SPIRAM | Octal / 80 MHz | Frame buffer in PSRAM |
+| Bounce Buffer | Enabled | PCLK stability with PSRAM framebuffer |
+| Flash | 16 MB QIO 80 MHz | ESP32-S3-WROOM-1-N16R8 |
+| Partition | Custom | `partitions.csv` |
+| FreeRTOS | 1000 Hz / dual core | LVGL recommended |
+| Main Task Stack | 8192 | LVGL task requirement |
 
-**HOTLCD — 工业级 RGB / MIPI / LVDS TFT LCD 显示屏与驱动板方案 · Since 2004**
+---
+
+## Contact
+
+<div align="center">
+
+**HOTLCD · 深圳市鑫洪泰电子科技有限公司**  
+Industrial-grade RGB / MIPI / LVDS TFT LCD display & driver board solutions since 2004
+
+</div>
+
+| | |
+|:--|:--|
+| **Website 官网** | [cn.display-lcd.com](https://cn.display-lcd.com) |
+| **English** | [www.hotlcd.com](https://www.hotlcd.com) |
+| **GitHub** | [github.com/HotDisplay](https://github.com/HotDisplay) |
+| **Sales 销售** | [lcd@hotlcd.com](mailto:lcd@hotlcd.com) |
+| **Samples 样品** | [lcd@hotlcd.com](mailto:lcd@hotlcd.com) |
+
+---
+
+<div align="center">
+
+<sub>Built with ESP-IDF + LVGL · Maintained by HOTLCD R&D Team</sub>
+
+</div>

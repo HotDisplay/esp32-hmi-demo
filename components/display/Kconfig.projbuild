@@ -1,18 +1,60 @@
-menu "Display Interface"
+menu "Display Selection"
 
     choice DISPLAY_IFACE
         prompt "Display Interface"
-        default DISPLAY_IFACE_RGB
+        default DISPLAY_INTERFACE_RGB
 
-        config DISPLAY_IFACE_RGB
+        config DISPLAY_INTERFACE_RGB
             bool "RGB (16-bit parallel)"
+            depends on SOC_LCD_RGB_SUPPORTED
 
-        config DISPLAY_IFACE_MIPI
+        config DISPLAY_INTERFACE_MIPI
             bool "MIPI DSI"
-            depends on IDF_TARGET_ESP32P4
+            depends on SOC_MIPI_DSI_SUPPORTED
             help
                 MIPI DSI is only available on ESP32-P4.
 
     endchoice
+
+    if DISPLAY_INTERFACE_RGB
+
+        choice BSP_PANEL_RGB
+            prompt "RGB LCD Panel"
+            default BSP_PANEL_RGB_H050A29
+            help
+                SELECT RGB DISPLAY
+
+            config BSP_PANEL_RGB_H050A29
+                bool "H050A29 (5.0 inch / 800x480 / GT911)"
+
+            config BSP_PANEL_RGB_H070B26
+                bool "H070B26 (7.0 inch / 1024x600 / GT911)"
+        endchoice
+
+    endif
+
+    if DISPLAY_INTERFACE_MIPI
+
+        choice BSP_PANEL_MIPI
+            prompt "MIPI DSI LCD Panel"
+            default BSP_PANEL_MIPI_H028A29
+            help
+                SELECT MIPI DSI DISPLAY
+
+            config BSP_PANEL_MIPI_H028A29
+                bool "H028A29 (2.8 inch / 540x540)"
+            config BSP_PANEL_MIPI_H035B16
+                bool "H035B16 (3.5 inch / 640x480)"
+            config BSP_PANEL_MIPI_H043A8
+                bool "H043A8 (4.3 inch / 480x800)"
+            config BSP_PANEL_MIPI_H050A11
+                bool "H050A11 (5.0 inch / 480x854 / GT911)"
+        endchoice
+
+    endif
+
+    config DISPLAY_USE_TOUCHPAD
+        bool "Display Use Touch Panel"
+        default n
 
 endmenu

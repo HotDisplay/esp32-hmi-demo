@@ -8,6 +8,9 @@
 
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_rgb.h"
+#ifdef SOC_MIPI_DSI_SUPPORTED
+#include "esp_lcd_mipi_dsi.h"
+#endif
 #include "esp_lcd_touch.h"
 #include "esp_log.h"
 
@@ -21,11 +24,11 @@ static const char *TAG = "LV_PORT";
 #define LVGL_DRAW_BUF_LINES         50 // number of display lines in each draw buffer
 #define LVGL_TICK_PERIOD_MS         2
 #define LVGL_TASK_STACK_SIZE        (12 * 1024)
-#define LVGL_TASK_PRIORITY          2
+#define LVGL_TASK_PRIORITY          10
 #define LVGL_TASK_MAX_DELAY_MS      500
 #define LVGL_TASK_MIN_DELAY_MS      1000 / CONFIG_FREERTOS_HZ
-#define LV_COLOR_FORMAT             LV_COLOR_FORMAT_RGB565
-#define LV_PIXEL_SIZE               2
+#define LV_COLOR_FORMAT             LV_COLOR_FORMAT_RGB888
+#define LV_PIXEL_SIZE               3
 
 
 // LVGL library is not thread-safe, this example will call LVGL APIs from different tasks, so use a mutex to protect it
@@ -33,11 +36,19 @@ static _lock_t lvgl_api_lock;
 
 extern void example_lvgl_demo_ui(lv_display_t *disp);
 
-static bool notify_lvgl_flush_ready(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *event_data, void *user_ctx) {
+#if CONFIG_DISPLAY_INTERFACE_RGB
+static bool notify_lvgl_flush_ready_rgb(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *event_data, void *user_ctx) {
     lv_display_t *disp = (lv_display_t *)user_ctx;
     lv_display_flush_ready(disp);
     return false;
 }
+#elif CONFIG_DISPLAY_INTERFACE_MIPI
+static bool notify_lvgl_flush_ready_dpi(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx) {
+    lv_display_t *disp = (lv_display_t *)user_ctx;
+    lv_display_flush_ready(disp);
+    return false;
+}
+#endif
 
 static void lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map) {
     esp_lcd_panel_handle_t panel_handle = lv_display_get_user_data(disp);
@@ -105,38 +116,52 @@ void lvgl_init(void) {
     // void *buf1 = heap_caps_malloc(LCD_H_RES * LCD_V_RES, MALLOC_CAP_32BIT);
     void *buf1 = NULL;
     void *buf2 = NULL;
-#if 1
-    buf1 = esp_lcd_rgb_alloc_draw_buffer(panel_handle, LCD_H_RES * LCD_V_RES * LV_PIXEL_SIZE, MALLOC_CAP_SPIRAM);
-    buf2 = esp_lcd_rgb_alloc_draw_buffer(panel_handle, LCD_H_RES * LCD_V_RES * LV_PIXEL_SIZE, MALLOC_CAP_SPIRAM);
+
+    size_t draw_buffer_sz = LCD_H_RES * LCD_V_RES * sizeof(lv_color_t);
+
+    // buf1 = esp_lcd_rgb_alloc_draw_buffer(panel_handle, draw_buffer_sz, MALLOC_CAP_SPIRAM);
+    // buf2 = esp_lcd_rgb_alloc_draw_buffer(panel_handle, draw_buffer_sz, MALLOC_CAP_SPIRAM);
+
+    buf1 = heap_caps_malloc(draw_buffer_sz, MALLOC_CAP_SPIRAM);
+    buf2 = heap_caps_malloc(draw_buffer_sz, MALLOC_CAP_SPIRAM);
+    assert(buf1);
+    assert(buf2);
+
 
     ESP_LOGI(TAG, "Use frame buffers as LVGL draw buffers");
+#if CONFIG_DISPLAY_INTERFACE_RGB
     ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 2, &buf1, &buf2));
+#elif CONFIG_DISPLAY_INTERFACE_MIPI
+    ESP_ERROR_CHECK(esp_lcd_dpi_panel_get_frame_buffer(panel_handle, 2, &buf1, &buf2));
+#endif
     // set LVGL draw buffers and direct mode
     lv_display_set_buffers(display, buf1, buf2, LCD_H_RES * LCD_V_RES * LV_PIXEL_SIZE, LV_DISPLAY_RENDER_MODE_DIRECT);
-#else
-    ESP_LOGI(TAG, "Allocate LVGL draw buffers");
-    // it's recommended to allocate the draw buffer from internal memory, for better performance
-    size_t draw_buffer_sz = LCD_H_RES * LVGL_DRAW_BUF_LINES * LV_PIXEL_SIZE;
-    buf1 = esp_lcd_rgb_alloc_draw_buffer(panel_handle, draw_buffer_sz, MALLOC_CAP_SPIRAM);
-    assert(buf1);
-    // set LVGL draw buffers and partial mode
-    lv_display_set_buffers(display, buf1, buf2, draw_buffer_sz, LV_DISPLAY_RENDER_MODE_PARTIAL);
-#endif // CONFIG_USE_DOUBLE_FB
 
     // set the callback which can copy the rendered image to an area of the display
     lv_display_set_flush_cb(display, lvgl_flush_cb);
 
+#if CONFIG_DISPLAY_USE_TOUCHPAD
     lv_indev_t *indev = lv_indev_create();
     lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
     lv_indev_set_display(indev, display);
     lv_indev_set_user_data(indev, touch_handle);
     lv_indev_set_read_cb(indev, lvgl_touch_cb);
+#endif
 
     ESP_LOGI(TAG, "Register event callbacks");
+
+#if CONFIG_DISPLAY_INTERFACE_RGB
     esp_lcd_rgb_panel_event_callbacks_t cbs = {
-        .on_color_trans_done = notify_lvgl_flush_ready,
+        .on_color_trans_done = notify_lvgl_flush_ready_rgb,
     };
     ESP_ERROR_CHECK(esp_lcd_rgb_panel_register_event_callbacks(panel_handle, &cbs, display));
+#elif CONFIG_DISPLAY_INTERFACE_MIPI
+    esp_lcd_dpi_panel_event_callbacks_t cbs = {
+        .on_color_trans_done = notify_lvgl_flush_ready_dpi,
+        // .on_refresh_done = example_monitor_refresh_rate,
+    };
+    ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(panel_handle, &cbs, display));
+#endif
 
     ESP_LOGI(TAG, "Install LVGL tick timer");
     // Tick interface for LVGL (using esp_timer to generate 2ms periodic event)

@@ -20,9 +20,9 @@ extern "C" {
 esp_err_t display_init(esp_lcd_panel_handle_t *out_panel);
 
 /** Per-interface init functions (called by display_init dispatch) */
-#if CONFIG_DISPLAY_IFACE_RGB
+#if CONFIG_DISPLAY_INTERFACE_RGB
 esp_err_t display_init_rgb(esp_lcd_panel_handle_t *out_panel);
-#elif CONFIG_DISPLAY_IFACE_MIPI
+#elif CONFIG_DISPLAY_INTERFACE_MIPI
 esp_err_t display_init_mipi(esp_lcd_panel_handle_t *out_panel);
 #endif
 
