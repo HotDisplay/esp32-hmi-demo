@@ -14,6 +14,7 @@
 
 /* Display enable (optional, -1 if not used) */
 #define BSP_DISP_EN             -1
+#define BSP_DISP_RST            GPIO_NUM_7
 
 /* I2C (touch) */
 #define BSP_I2C0_SDA             GPIO_NUM_42

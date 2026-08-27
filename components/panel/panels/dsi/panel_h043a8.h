@@ -39,7 +39,7 @@
  * Note: 0x11 (Sleep Out) and 0x29 (Display On) are included here because the
  * generic esp_lcd_mipi driver does NOT emit them automatically.
  */
-#define H043A8_INIT_SEQ_VER     4      /* 5 = V5 (default), 4 = V4 */
+#define H043A8_INIT_SEQ_VER     5      /* 5 = V5 (default), 4 = V4 */
 
 #if H043A8_INIT_SEQ_VER == 4
 /* ----- H043A8 V4 init sequence ----- */

@@ -52,8 +52,8 @@ esp-display-driver/
 │
 ├── components/
 │   ├── bsp/                    # Board Support Package (pinout)
-│   │   ├── bsp_lcd.h           # Unified BSP interface
-│   │   ├── bsp_lcd.c           # Backlight + touch init
+│   │   ├── bsp.h               # Unified BSP interface
+│   │   ├── bsp.c               # Backlight + touch init (+ io expander)
 │   │   ├── Kconfig.projbuild   # Board selection menu
 │   │   └── boards/
 │   │       └── board_h050a29_esp_stdrgb.h   # ESP32-S3 RGB board
@@ -140,7 +140,7 @@ After flashing, the screen displays the **LVGL Widgets Demo**.
 |:----:|------|--------|
 | 1 | `components/bsp/boards/board_xxx.h` | Define GPIO pinout |
 | 2 | `components/bsp/Kconfig.projbuild` | Add `config BSP_BOARD_XXX` |
-| 3 | `components/bsp/bsp_lcd.h` | Add `#elif CONFIG_BSP_BOARD_XXX` |
+| 3 | `components/bsp/bsp.h` | Add `#elif CONFIG_BSP_BOARD_XXX` |
 
 ### New Panel
 
@@ -156,7 +156,7 @@ After flashing, the screen displays the **LVGL Widgets Demo**.
 |:----:|------|--------|
 | 1 | `components/display/display_xxx.c` | Implement `display_init_xxx()` |
 | 2 | `components/display/Kconfig.projbuild` | Add interface + chip dependency |
-| 3 | `components/bsp/bsp_lcd.c` | Add `#elif` dispatch |
+| 3 | `components/bsp/bsp.c` | Add `#elif` dispatch |
 
 > **`main/` never needs changes.** `main/` 一行不用改。
 

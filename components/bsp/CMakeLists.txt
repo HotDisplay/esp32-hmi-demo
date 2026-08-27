@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "bsp_lcd.c"
+    SRCS "bsp.c"
     INCLUDE_DIRS "." "boards"
     REQUIRES esp_lcd
             esp_lcd_touch

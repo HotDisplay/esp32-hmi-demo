@@ -15,7 +15,7 @@ extern "C" {
  * (CONFIG_DISPLAY_IFACE_RGB / CONFIG_DISPLAY_IFACE_MIPI / ...).
  *
  * All pinout and timing parameters are taken from the BSP board &
- * panel headers which are already included by bsp_lcd.h.
+ * panel headers which are already included by bsp.h.
  */
 esp_err_t display_init(esp_lcd_panel_handle_t *out_panel);
 

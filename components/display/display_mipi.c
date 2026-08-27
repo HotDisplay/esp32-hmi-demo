@@ -6,7 +6,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_mipi_dsi.h"
 
-#include "bsp_lcd.h"
+#include "bsp.h"
 
 #include "esp_lcd_mipi.h"
 
@@ -81,8 +81,11 @@ esp_err_t display_init_mipi(esp_lcd_panel_handle_t *out_panel) {
         .bits_per_pixel = PANEL_MIPI_COLOR_BITS,
         .vendor_config = &vendor_config,
     };
+    // Panel RST/SLEEP are routed through the board IO expander; BSP owns that
+    // hardware, so power-on + reset happen here via the BSP API (not the generic driver).
     ESP_ERROR_CHECK(esp_lcd_new_panel_mipi(dsi_io_handle, &lcd_dev_config, out_panel));
-    ESP_ERROR_CHECK(esp_lcd_panel_reset(*out_panel));
+    ESP_ERROR_CHECK(bsp_display_enable(1));
+    ESP_ERROR_CHECK(bsp_display_reset());
     ESP_ERROR_CHECK(esp_lcd_panel_init(*out_panel));
 
     ESP_LOGI(TAG, "MIPI panel ready");

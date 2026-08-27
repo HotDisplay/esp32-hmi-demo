@@ -9,7 +9,7 @@
 #include "driver/i2c_master.h"
 #include "esp_io_expander_tca95xx_16bit.h"
 
-#include "bsp_lcd.h"
+#include "bsp.h"
 #include "display.h"
 #include "lv_init.h"
 #include "wifi_init.h"
@@ -42,6 +42,9 @@ void app_main(void) {
 
     /* Start LVGL */
     lvgl_init();
+
+    /* After LVGL fully initialized (frame rendered): now turn on the backlight */
+    bsp_backlight_enable();
 
     /* Init Wi-Fi*/
 

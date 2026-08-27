@@ -4,8 +4,8 @@
 #include "esp_log.h"
 #include "esp_check.h"
 
-/* BSP board + panel macros come via bsp_lcd.h chain */
-#include "bsp_lcd.h"
+/* BSP board + panel macros come via bsp.h chain */
+#include "bsp.h"
 
 static const char *TAG = "DISPLAY_RGB";
 
@@ -19,7 +19,7 @@ esp_err_t display_init_rgb(esp_lcd_panel_handle_t *out_panel) {
         .num_fbs = LCD_NUM_FB,
         .bounce_buffer_size_px = 10 * LCD_H_RES, //Bounce buffer
         .clk_src = LCD_CLK_SRC_DEFAULT,
-        .disp_gpio_num = BSP_DISP_EN,
+        .disp_gpio_num = -1, // DISP/EN is driven by the BSP (expander on some boards)
         .pclk_gpio_num = BSP_LCD_PCLK,
         .vsync_gpio_num = BSP_LCD_VSYNC,
         .hsync_gpio_num = BSP_LCD_HSYNC,
@@ -50,7 +50,12 @@ esp_err_t display_init_rgb(esp_lcd_panel_handle_t *out_panel) {
     };
 
     ESP_RETURN_ON_ERROR(esp_lcd_new_rgb_panel(&cfg, out_panel), TAG, "new rgb panel");
-    ESP_RETURN_ON_ERROR(esp_lcd_panel_reset(*out_panel), TAG, "panel reset");
+
+    /* Panel RST / EN may live on the IO expander (e.g. ESP32P4-DEMO-A02); let
+     * the BSP handle them so this component stays board-agnostic. On boards
+     * without such wiring these are no-ops and the panel driver resets itself. */
+    ESP_RETURN_ON_ERROR(bsp_display_enable(true), TAG, "display enable");
+    ESP_RETURN_ON_ERROR(bsp_display_reset(), TAG, "display reset");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_init(*out_panel), TAG, "panel init");
 
     ESP_LOGI(TAG, "RGB panel ready");

@@ -1,8 +1,9 @@
-#include "bsp_lcd.h"
+#include "bsp.h"
 
 #include "esp_lcd_touch.h"
 #include "esp_lcd_touch_gt911.h"
 
+#include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "driver/i2c_master.h"
 
@@ -20,8 +21,8 @@ esp_lcd_touch_handle_t touch_handle = NULL;
 
 #ifdef BSP_USE_IO_EXPANDER
 
-esp_io_expander_handle_t io_expander = NULL;
-i2c_master_bus_handle_t io_expander_i2c_bus = NULL;
+static esp_io_expander_handle_t s_io_expander = NULL;
+static i2c_master_bus_handle_t s_io_expander_i2c_bus = NULL;
 
 static void bsp_io_expander_init(void) {
     const i2c_master_bus_config_t io_expander_i2c_config = {
@@ -30,8 +31,8 @@ static void bsp_io_expander_init(void) {
         .scl_io_num = BSP_I2C1_SCL,
         .clk_source = I2C_CLK_SRC_DEFAULT,
     };
-    i2c_new_master_bus(&io_expander_i2c_config, &io_expander_i2c_bus);
-    esp_io_expander_new_i2c_tca95xx_16bit(io_expander_i2c_bus, ESP_IO_EXPANDER_I2C_TCA9555_ADDRESS_010, &io_expander);
+    i2c_new_master_bus(&io_expander_i2c_config, &s_io_expander_i2c_bus);
+    esp_io_expander_new_i2c_tca95xx_16bit(s_io_expander_i2c_bus, ESP_IO_EXPANDER_I2C_TCA9555_ADDRESS_010, &s_io_expander);
 }
 
 static void bsp_tp_reset_by_expander(void) {
@@ -44,18 +45,18 @@ static void bsp_tp_reset_by_expander(void) {
         .pin_bit_mask = 1ULL << BSP_CTP_INT,
     };
     gpio_config(&int_gpio_config);
-    esp_io_expander_set_dir(io_expander, BSP_CTP_RST, IO_EXPANDER_OUTPUT);
+    esp_io_expander_set_dir(s_io_expander, BSP_IOEXP_CTP_RST, IO_EXPANDER_OUTPUT);
 
     /* rst int output 0 */
     gpio_set_level(BSP_CTP_INT, 0);
-    esp_io_expander_set_level(io_expander, BSP_CTP_RST, 0);
+    esp_io_expander_set_level(s_io_expander, BSP_IOEXP_CTP_RST, 0);
     vTaskDelay(pdMS_TO_TICKS(10));
 
     // gpio_set_level(BSP_CTP_INT, 1);
     // vTaskDelay(pdMS_TO_TICKS(1));
 
     /* rst output 1 */
-    esp_io_expander_set_level(io_expander, BSP_CTP_RST, 1);
+    esp_io_expander_set_level(s_io_expander, BSP_IOEXP_CTP_RST, 1);
     vTaskDelay(pdMS_TO_TICKS(200));
 
     /* int set input */
@@ -66,7 +67,7 @@ static void bsp_tp_reset_by_expander(void) {
     gpio_config(&int_gpio_config);
 
 }
-#endif 
+#endif /* BSP_USE_IO_EXPANDER */
 
 /* ===== Backlight (internal) ===== */
 
@@ -78,9 +79,6 @@ static void bsp_backlight_init(void) {
     };
     gpio_config(&cfg);
 #endif
-}
-
-static void bsp_backlight_pwm_init(void) {
     ledc_timer_config_t ledc_timer = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .timer_num = LEDC_TIMER_0,
@@ -96,18 +94,28 @@ static void bsp_backlight_pwm_init(void) {
         .timer_sel = LEDC_TIMER_0,
         .intr_type = LEDC_INTR_DISABLE,
         .gpio_num = BSP_BACKLIGHT_PWM,
-        .duty = 50,
+        .duty = 0,
     };
     ledc_channel_config(&ledc_channel);
+
 }
 
 /* 设置背光亮度 */
-static void bsp_backlight_set_level(uint32_t level) {
+static void bsp_backlight_set(uint32_t level, uint32_t brightness) {
 #if BSP_BACKLIGHT_EN >= 0
     gpio_set_level(BSP_BACKLIGHT_EN, level);
 #endif
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 200);
+    uint32_t max_duty = (1U << LEDC_TIMER_10_BIT) - 1;
+    uint32_t duty = max_duty * brightness / 100;
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+    ESP_LOGD(TAG, "duty:%d", duty);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+}
+
+/* Turn the backlight ON. Call this only after LVGL has finished initializing,
+ * so the panel is never lit with an unrendered frame. */
+void bsp_backlight_enable(void) {
+    bsp_backlight_set(LCD_BACKLIGHT_ON, 30);
 }
 
 /* ===== Touch (internal) ===== */
@@ -148,7 +156,7 @@ static esp_err_t bsp_touch_init_internal(esp_lcd_touch_handle_t *out_touch) {
         .driver_data = &gt911_cfg,
     };
 
-#ifdef BSP_CTP_RST_ON_EXPANDER
+#ifdef BSP_IOEXP_CTP_RST
     touch_cfg.rst_gpio_num = GPIO_NUM_NC;
     bsp_tp_reset_by_expander();
 #else
@@ -170,27 +178,26 @@ esp_err_t bsp_init(esp_lcd_panel_handle_t *out_panel, esp_lcd_touch_handle_t *ou
     ESP_LOGI(TAG, "Initializing BSP for board: %s", BSP_BOARD_NAME);
     ESP_LOGI(TAG, "LCD: %dx%d", LCD_H_RES, LCD_V_RES);
 
-    /* 1. Backlight setup */
-    bsp_backlight_init();
-    bsp_backlight_pwm_init();
-    bsp_backlight_set_level(LCD_BACKLIGHT_ON);
-
-    /* 2. IO Expander Init */
+    /* 1. IO Expander init (must precede touch reset on expander pins) */
 #ifdef BSP_USE_IO_EXPANDER
     bsp_io_expander_init();
 #endif
 
-    /* 3. Touch (display panel is initialized by the display component via
+    /* 2. Touch init (display panel is initialized by the display component via
      *    display_init(), called from the application, to avoid a circular
      *    dependency between bsp and display). */
 #if CONFIG_DISPLAY_USE_TOUCHPAD
     ESP_RETURN_ON_ERROR(bsp_touch_init_internal(&touch_handle), TAG, "touch init failed");
 #endif
 
+    /* 3. Backlight: configure GPIO + PWM, but keep it OFF until LVGL is ready.
+     *    The application calls bsp_backlight_enable() after lvgl_init(). */
+    bsp_backlight_init();
+
     /* Output handles */
     if (out_touch) *out_touch = touch_handle;
 
-    ESP_LOGI(TAG, "BSP init complete (backlight + touch; display via display_init)");
+    ESP_LOGI(TAG, "BSP init complete (io-expander + touch + backlight cfg; display via display_init)");
     return ESP_OK;
 }
 
@@ -210,3 +217,50 @@ const char *bsp_panel_name(void) {
 
 uint16_t bsp_get_screen_width(void) { return LCD_H_RES; }
 uint16_t bsp_get_screen_height(void) { return LCD_V_RES; }
+
+
+/* ===== Display power / reset control =====
+ * The panel RST and SLEEP/EN pins may live on the IO expander (e.g. A02 board)
+ * or on direct MCU GPIO (e.g. boards without an expander / with GPIO wiring).
+ * These helpers centralize that board-specific wiring so the display component
+ * never touches the expander or pin macros directly. */
+
+esp_err_t bsp_display_reset(void) {
+#if defined(BSP_IOEXP_DISP_RST)
+    if (s_io_expander == NULL) {
+        ESP_LOGW(TAG, "display reset requested but no io expander");
+        return ESP_ERR_NOT_FOUND;
+    }
+    ESP_RETURN_ON_ERROR(esp_io_expander_set_dir(s_io_expander, BSP_IOEXP_DISP_RST, IO_EXPANDER_OUTPUT), TAG, "rst dir");
+    esp_io_expander_set_level(s_io_expander, BSP_IOEXP_DISP_RST, 0);
+    vTaskDelay(pdMS_TO_TICKS(10));
+    esp_io_expander_set_level(s_io_expander, BSP_IOEXP_DISP_RST, 1);
+    vTaskDelay(pdMS_TO_TICKS(120));
+#elif (BSP_DISP_RST >= 0)
+    gpio_set_level(BSP_DISP_RST, 0);
+    vTaskDelay(pdMS_TO_TICKS(10));
+    gpio_set_level(BSP_DISP_RST, 1);
+    vTaskDelay(pdMS_TO_TICKS(120));
+#else 
+
+#endif
+    return ESP_OK;
+}
+
+esp_err_t bsp_display_enable(bool on) {
+#if defined(BSP_IOEXP_DISP_EN)
+    if (s_io_expander == NULL) {
+        ESP_LOGW(TAG, "display enable requested but no io expander");
+        return ESP_ERR_NOT_FOUND;
+    }
+    ESP_RETURN_ON_ERROR(esp_io_expander_set_dir(s_io_expander, BSP_IOEXP_DISP_EN, IO_EXPANDER_OUTPUT), TAG, "sleep dir");
+    /* SLEEP is active-high: high = running, low = sleep */
+    esp_io_expander_set_level(s_io_expander, BSP_IOEXP_DISP_EN, on ? 1 : 0);
+
+#elif BSP_DISP_EN >= 0
+    gpio_set_level(BSP_DISP_EN, on ? 1 : 0);
+#else 
+
+#endif
+    return ESP_OK;
+}

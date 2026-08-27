@@ -17,7 +17,7 @@
 #include "lvgl.h"
 #include "lv_demos.h"
 
-#include "bsp_lcd.h"
+#include "bsp.h"
 
 static const char *TAG = "LV_PORT";
 
