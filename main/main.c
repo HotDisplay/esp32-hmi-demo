@@ -13,6 +13,7 @@
 #include "display.h"
 #include "lv_init.h"
 #include "wifi_init.h"
+#include "ethernet_init.h"
 
 static const char *TAG = "Main";
 
@@ -50,5 +51,9 @@ void app_main(void) {
 
 #ifdef CONFIG_ESP_WIFI_ENABLED
     wifi_init();
+#endif
+
+#ifdef CONFIG_SOC_EMAC_SUPPORTED
+    ethernet_init();
 #endif
 }

@@ -73,3 +73,21 @@
 #define BSP_SD2_CLK             GPIO_NUM_47
 #define BSP_SD2_CMD             GPIO_NUM_46
 #define BSP_IOEXP_C6_RESET      IO_EXPANDER_PIN_NUM_0
+
+/* RMII IO */
+#define ETH_MDC                 GPIO_NUM_31
+#define ETH_MDIO                GPIO_NUM_36
+#define ETH_PHY_RST             GPIO_NUM_45
+
+#define ETH_RMII_CLK            GPIO_NUM_32
+#define ETH_RMII_TX_EN          GPIO_NUM_33
+#define ETH_RMII_TXD0           GPIO_NUM_34
+#define ETH_RMII_TXD1           GPIO_NUM_35
+#define ETH_RMII_CRS_DV         GPIO_NUM_28
+#define ETH_RMII_CRS_RXD0       GPIO_NUM_29
+#define ETH_RMII_CRS_RXD1       GPIO_NUM_30
+
+
+
+
+
