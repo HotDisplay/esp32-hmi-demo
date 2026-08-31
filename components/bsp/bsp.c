@@ -1,8 +1,6 @@
 #include "bsp.h"
 
 #include "esp_lcd_touch.h"
-#include "esp_lcd_touch_gt911.h"
-#include "esp_lcd_touch_axs15260d.h"
 
 #include "driver/gpio.h"
 #include "driver/ledc.h"
@@ -15,9 +13,6 @@
 #include "esp_io_expander_tca95xx_16bit.h"
 
 static const char *TAG = "BSP";
-
-/* ===== Board-level handle (private, exposed via bsp_get_touch_handle()) ===== */
-static esp_lcd_touch_handle_t s_touch_handle = NULL;
 
 #ifdef BSP_USE_IO_EXPANDER
 
@@ -35,39 +30,77 @@ static void bsp_io_expander_init(void) {
     esp_io_expander_new_i2c_tca95xx_16bit(s_io_expander_i2c_bus, ESP_IO_EXPANDER_I2C_TCA9555_ADDRESS_010, &s_io_expander);
 }
 
-static void bsp_tp_reset_by_expander(void) {
+#endif /* BSP_USE_IO_EXPANDER */
 
-    gpio_config_t int_gpio_config = {
+/* Touch pin primitives.
+ *
+ * The BSP only knows WHERE these pins are (plain MCU GPIO or IO expander
+ * output). The reset SEQUENCE lives in components/touch, because each
+ * controller latches its I2C address differently — GT911 samples the INT pin
+ * while reset is released, AXS15260D does not. Keeping the timing out of the
+ * BSP is what stops one chip's sequence from breaking another's.
+ *
+ * Every function returns ESP_ERR_NOT_SUPPORTED when the board has no such
+ * pin, so the caller can fall back gracefully. */
+
+esp_err_t bsp_touch_set_reset(int level) {
+#if defined(BSP_IOEXP_CTP_RST)
+    if (s_io_expander == NULL) {
+        ESP_LOGW(TAG, "touch reset requested but no io expander");
+        return ESP_ERR_NOT_FOUND;
+    }
+    ESP_RETURN_ON_ERROR(esp_io_expander_set_dir(s_io_expander, BSP_IOEXP_CTP_RST, IO_EXPANDER_OUTPUT),
+                        TAG, "ctp rst dir");
+    ESP_RETURN_ON_ERROR(esp_io_expander_set_level(s_io_expander, BSP_IOEXP_CTP_RST, level ? 0 : 1),
+                        TAG, "ctp rst level");
+    return ESP_OK;
+#elif defined(BSP_CTP_RST) && (BSP_CTP_RST >= 0)
+    gpio_config_t cfg = {
         .mode = GPIO_MODE_OUTPUT,
-        .intr_type = GPIO_INTR_DISABLE,
+        .pull_up_en = 0,
         .pull_down_en = 0,
-        .pull_up_en = 1,
+        .intr_type = GPIO_INTR_DISABLE,
+        .pin_bit_mask = 1ULL << BSP_CTP_RST,
+    };
+    ESP_RETURN_ON_ERROR(gpio_config(&cfg), TAG, "ctp rst cfg");
+    ESP_RETURN_ON_ERROR(gpio_set_level(BSP_CTP_RST, asserted ? 0 : 1), TAG, "ctp rst level");
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+esp_err_t bsp_touch_set_int(int level) {
+#if defined(BSP_CTP_INT) && (BSP_CTP_INT >= 0)
+    gpio_config_t cfg = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = 0,
+        .pull_down_en = 0,
+        .intr_type = GPIO_INTR_DISABLE,
         .pin_bit_mask = 1ULL << BSP_CTP_INT,
     };
-    gpio_config(&int_gpio_config);
-    esp_io_expander_set_dir(s_io_expander, BSP_IOEXP_CTP_RST, IO_EXPANDER_OUTPUT);
-
-    /* rst int output 0 */
-    gpio_set_level(BSP_CTP_INT, 0);
-    esp_io_expander_set_level(s_io_expander, BSP_IOEXP_CTP_RST, 0);
-    vTaskDelay(pdMS_TO_TICKS(10));
-
-    // gpio_set_level(BSP_CTP_INT, 1);
-    // vTaskDelay(pdMS_TO_TICKS(1));
-
-    /* rst output 1 */
-    esp_io_expander_set_level(s_io_expander, BSP_IOEXP_CTP_RST, 1);
-    vTaskDelay(pdMS_TO_TICKS(200));
-
-    /* int set input */
-    int_gpio_config.mode = GPIO_MODE_INPUT;
-    int_gpio_config.intr_type = GPIO_INTR_NEGEDGE;
-    int_gpio_config.pin_bit_mask = 1ULL << BSP_CTP_INT;
-    // int_gpio_config.pull_up_en = GPIO_PULLUP_ENABLE;
-    gpio_config(&int_gpio_config);
-
+    ESP_RETURN_ON_ERROR(gpio_config(&cfg), TAG, "ctp int cfg");
+    ESP_RETURN_ON_ERROR(gpio_set_level(BSP_CTP_INT, level ? 1 : 0), TAG, "ctp int level");
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
 }
-#endif /* BSP_USE_IO_EXPANDER */
+
+esp_err_t bsp_touch_release_int(void) {
+#if defined(BSP_CTP_INT) && (BSP_CTP_INT >= 0)
+    gpio_config_t cfg = {
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = 1,
+        .intr_type = GPIO_INTR_NEGEDGE,
+        .pin_bit_mask = 1ULL << BSP_CTP_INT,
+    };
+    ESP_RETURN_ON_ERROR(gpio_config(&cfg), TAG, "ctp int release");
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
 
 /* ===== Backlight (internal) ===== */
 
@@ -118,74 +151,8 @@ void bsp_backlight_enable(void) {
     bsp_backlight_set(LCD_BACKLIGHT_ON, 30);
 }
 
-/* ===== Touch (internal) ===== */
-
-static esp_err_t bsp_touch_init_internal(void) {
-#if !defined(BSP_TOUCH_TYPE)
-    ESP_LOGW(TAG, "Touch not configured for this panel");
-    return ESP_OK;
-#else
-    i2c_master_bus_handle_t i2c_bus = NULL;
-    esp_lcd_panel_io_handle_t io_handle = NULL;
-
-    i2c_master_bus_config_t i2c_cfg = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .sda_io_num = BSP_I2C0_SDA,
-        .scl_io_num = BSP_I2C0_SCL,
-        .i2c_port = I2C_NUM_0,
-        .glitch_ignore_cnt = 7,
-        .flags.enable_internal_pullup = false,
-    };
-    ESP_RETURN_ON_ERROR(i2c_new_master_bus(&i2c_cfg, &i2c_bus), TAG, "i2c bus failed");
-
-    /* IO config and driver data must come from the same touch chip, otherwise
-     * the two get mismatched when switching panels. */
-#if BSP_TOUCH_TYPE == BSP_TOUCH_GT911
-    esp_lcd_panel_io_i2c_config_t io_cfg = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
-    esp_lcd_touch_io_gt911_config_t tp_drv_cfg = { 0 };
-#elif BSP_TOUCH_TYPE == BSP_TOUCH_AXS15260D
-    esp_lcd_panel_io_i2c_config_t io_cfg = ESP_LCD_TOUCH_IO_I2C_AXS15260D_CONFIG();
-    esp_lcd_touch_io_axs15260d_config_t tp_drv_cfg = { 0 };
-#else
-    ESP_LOGW(TAG, "Unsupported touch type: %d", BSP_TOUCH_TYPE);
-    return ESP_ERR_NOT_SUPPORTED;
-#endif
-    io_cfg.scl_speed_hz = 400000;
-    tp_drv_cfg.dev_addr = io_cfg.dev_addr;
-
-    esp_lcd_touch_config_t touch_cfg = {
-        .x_max = BSP_TOUCH_X_MAX,
-        .y_max = BSP_TOUCH_Y_MAX,
-        .int_gpio_num = BSP_CTP_INT,
-        .levels = {
-            .reset = 0,
-            .interrupt = 0
-        },
-        .flags = {
-            .swap_xy = BSP_TOUCH_SWAP_XY
-        },
-        .driver_data = &tp_drv_cfg,
-    };
-
-#ifdef BSP_IOEXP_CTP_RST
-    touch_cfg.rst_gpio_num = GPIO_NUM_NC;
-    bsp_tp_reset_by_expander();
-#else
-    touch_cfg.rst_gpio_num = BSP_CTP_RST;
-#endif
-
-    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_lcd_new_panel_io_i2c(i2c_bus, &io_cfg, &io_handle));
-
-    /* A touch failure must not abort the whole boot: the display stays usable,
-     * s_touch_handle simply remains NULL and callers skip the input device. */
-#if BSP_TOUCH_TYPE == BSP_TOUCH_GT911
-    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_lcd_touch_new_i2c_gt911(io_handle, &touch_cfg, &s_touch_handle));
-#elif BSP_TOUCH_TYPE == BSP_TOUCH_AXS15260D
-    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_lcd_touch_new_i2c_axs15260d(io_handle, &touch_cfg, &s_touch_handle));
-#endif
-    return ESP_OK;
-#endif /* !defined(BSP_TOUCH_TYPE) */
-}
+/* Touch controller initialization lives in the `touch` component
+ * (components/touch/touch.c). Call touch_init() after bsp_init(). */
 
 /* ===== Public BSP API ===== */
 
@@ -198,24 +165,15 @@ esp_err_t bsp_init(void) {
     bsp_io_expander_init();
 #endif
 
-    /* 2. Touch init (display panel is initialized by the display component via
-     *    display_init(), called from the application, to avoid a circular
-     *    dependency between bsp and display). */
-#if CONFIG_DISPLAY_USE_TOUCHPAD
-    ESP_RETURN_ON_ERROR(bsp_touch_init_internal(), TAG, "touch init failed");
-#endif
-
-    /* 3. Backlight: configure GPIO + PWM, but keep it OFF until LVGL is ready.
+    /* 2. Backlight: configure GPIO + PWM, but keep it OFF until LVGL is ready.
      *    The application calls bsp_backlight_enable() after lvgl_init(). */
     bsp_backlight_init();
 
-
-    ESP_LOGI(TAG, "BSP init complete (io-expander + touch + backlight cfg; display via display_init)");
+    /* The touch controller is initialized separately by the application via
+     * touch_init() (components/touch), which must run AFTER bsp_init(), because
+     * its reset line may sit on the IO expander configured above. */
+    ESP_LOGI(TAG, "BSP init complete (io-expander + backlight cfg; display via display_init)");
     return ESP_OK;
-}
-
-esp_lcd_touch_handle_t bsp_get_touch_handle(void) {
-    return s_touch_handle;
 }
 
 const char *bsp_board_name(void) {

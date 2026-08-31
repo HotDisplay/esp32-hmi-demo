@@ -3,8 +3,6 @@ idf_component_register(
     INCLUDE_DIRS "." "boards"
     REQUIRES esp_lcd
             esp_lcd_touch
-            esp_lcd_touch_gt911
-            esp_lcd_touch_axs15260d
             esp_driver_ledc
             esp_driver_gpio
             esp_driver_i2c

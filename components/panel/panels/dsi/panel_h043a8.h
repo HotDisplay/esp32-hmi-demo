@@ -24,11 +24,8 @@
  * COLMOD is set by esp_lcd_mipi based on this value. */
 #define PANEL_MIPI_COLOR_BITS   24   /* 16=RGB565, 18=RGB666, 24=RGB888 */
 
-/* TODO: 触摸型号未确认，暂按 GT911 处理（与 H050A11 模板一致），
- * 上板核对后如不符请修改 BSP_TOUCH_TYPE / 坐标 / SWAP_XY。 */
-#define BSP_TOUCH_NONE           0
-#define BSP_TOUCH_GT911          1
-#define BSP_TOUCH_TYPE           BSP_TOUCH_GT911
+/* TODO: 触摸型号未确认，暂按 GT911 处理（与 H050A11 模板一致）。
+ * 上板核对后如不符，改本面板在 Kconfig 中的 `select` 行即可。 */
 #define BSP_TOUCH_X_MAX          480
 #define BSP_TOUCH_Y_MAX          800
 #define BSP_TOUCH_SWAP_XY        0

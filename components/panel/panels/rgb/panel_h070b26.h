@@ -15,9 +15,8 @@
 #define LCD_NUM_FB              2
 #define LCD_PCLK_ACTIVE_NEG     true
 
-#define BSP_TOUCH_NONE           0
-#define BSP_TOUCH_GT911          1
-#define BSP_TOUCH_TYPE           BSP_TOUCH_GT911
+/* Touch controller is chosen by Kconfig: the panel entry `select`s the matching
+ * BSP_TOUCH_* symbol, so the chip is never defined here. */
 #define BSP_TOUCH_X_MAX          1024
 #define BSP_TOUCH_Y_MAX          600
 #define BSP_TOUCH_SWAP_XY        0

@@ -6,6 +6,7 @@ idf_component_register(SRC_DIRS "."
                        esp_driver_ledc 
                        bsp
                        display
+                       touch
                        esp_wifi
                        nvs_flash
                        ethernet

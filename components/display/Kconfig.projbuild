@@ -26,12 +26,15 @@ menu "Display Selection"
 
             config BSP_PANEL_RGB_H021A04
                 bool "H021A04 (2.1 inch / 540x540 / AXS15260D)"
+                select BSP_TOUCH_AXS15260D
 
             config BSP_PANEL_RGB_H050A29
                 bool "H050A29 (5.0 inch / 800x480 / GT911)"
+                select BSP_TOUCH_GT911
 
             config BSP_PANEL_RGB_H070B26
                 bool "H070B26 (7.0 inch / 1024x600 / GT911)"
+                select BSP_TOUCH_GT911
         endchoice
 
     endif
@@ -45,13 +48,20 @@ menu "Display Selection"
                 SELECT MIPI DSI DISPLAY
 
             config BSP_PANEL_MIPI_H028A29
-                bool "H028A29 (2.8 inch / 540x540)"
+                bool "H028A29 (2.8 inch / 540x540 / AXS15260D)"
+                select BSP_TOUCH_AXS15260D
+
             config BSP_PANEL_MIPI_H035B16
-                bool "H035B16 (3.5 inch / 640x480)"
+                bool "H035B16 (3.5 inch / 640x480 / GT911)"
+                select BSP_TOUCH_GT911
+
             config BSP_PANEL_MIPI_H043A8
-                bool "H043A8 (4.3 inch / 480x800)"
+                bool "H043A8 (4.3 inch / 480x800 / GT911)"
+                select BSP_TOUCH_GT911
+                
             config BSP_PANEL_MIPI_H050A11
                 bool "H050A11 (5.0 inch / 480x854 / GT911)"
+                select BSP_TOUCH_GT911
         endchoice
 
     endif

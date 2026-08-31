@@ -27,22 +27,49 @@ extern "C" {
 /* ===== Uniform BSP Interface ===== */
 
 /**
- * @brief Initialize board-level resources (io expander + touch + backlight)
+ * @brief Initialize board-level resources (io expander + backlight)
  *
  * Initialization order:
  *   1. IO expander (when the board has one)
- *   2. Touch controller (when CONFIG_DISPLAY_USE_TOUCHPAD is set)
- *   3. Backlight GPIO + PWM, kept OFF (see bsp_backlight_enable())
+ *   2. Backlight GPIO + PWM, kept OFF (see bsp_backlight_enable())
  *
- * The LCD panel is NOT created here. Call display_init() from the display
- * component instead — this keeps bsp and display decoupled.
+ * Neither the LCD panel nor the touch controller is created here: the
+ * application calls display_init() and touch_init() afterwards, which keeps
+ * bsp decoupled from both.
  */
 esp_err_t bsp_init(void);
 
-/* Get the touch handle created by bsp_init().
- * Returns NULL when touch is disabled or initialization failed, so callers
- * must check the result before use. */
-esp_lcd_touch_handle_t bsp_get_touch_handle(void);
+/* Touch pin primitives.
+ *
+ * The BSP only owns WHERE the pins are (plain MCU GPIO or IO expander output);
+ * the reset SEQUENCE itself belongs to components/touch, because every touch
+ * IC latches its I2C address differently (GT911 samples the INT pin during
+ * reset, AXS15260D does not). Keeping the timing out of the BSP is what stops
+ * one chip's sequence from silently breaking another's. */
+
+/**
+ * @brief Drive the touch reset pin
+ *
+ * @param asserted  true = hold the chip in reset (low), false = release (high)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED when this board has no touch reset pin
+ *      - ESP_ERR_NOT_FOUND when the pin needs an expander that is not ready
+ */
+esp_err_t bsp_touch_set_reset(int level);
+
+/**
+ * @brief Drive the touch INT pin while it acts as an address strapping input
+ *
+ * Must be called before releasing reset on controllers that sample INT to
+ * select their I2C address.
+ */
+esp_err_t bsp_touch_set_int(int level);
+
+/**
+ * @brief Release the INT pin back to input so the driver can use it as IRQ
+ */
+esp_err_t bsp_touch_release_int(void);
 
 /* Turn the backlight ON. Call this after LVGL init completes, so the panel is
  * only lit once a frame has been rendered. bsp_init() only configures the

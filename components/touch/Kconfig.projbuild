@@ -1,0 +1,16 @@
+# Touch controller is chosen automatically: every panel entry under
+# "Display Selection" `select`s the matching symbol here.
+#
+# These symbols intentionally have no prompt, which makes them hidden in
+# menuconfig — they can only be turned on by a panel's `select`, never set by
+# hand. That is what prevents panel and touch chip from drifting apart.
+# To change the chip for a panel, edit that panel's `select` line.
+
+config BSP_TOUCH_GT911
+    bool
+
+config BSP_TOUCH_AXS15260D
+    bool
+
+config BSP_TOUCH_NONE
+    bool
