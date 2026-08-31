@@ -17,8 +17,8 @@
 #define LCD_VBP                 20      /* vback_porch */
 #define LCD_VFP                 20      /* vfront_porch */
 
+#define BIT_RATE_MBPS           500
 #define LCD_NUM_FB              2
-#define LCD_PCLK_ACTIVE_NEG     true
 
 /* MIPI DPI input color format / controller color depth for this panel.
  * COLMOD is set by esp_lcd_mipi based on this value. */

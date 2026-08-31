@@ -3,7 +3,7 @@
 
 #define BSP_PANEL_NAME          "H070B26 (7.0 inch / 1024x600)"
 
-#define LCD_PIXEL_CLOCK_HZ      (22 * 1000 * 1000)
+#define LCD_PIXEL_CLOCK_HZ      (30 * 1000 * 1000)
 #define LCD_H_RES               1024
 #define LCD_V_RES               600
 #define LCD_HSYNC               4

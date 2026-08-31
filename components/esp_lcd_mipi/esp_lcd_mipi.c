@@ -48,8 +48,6 @@ static const char *TAG = "esp_lcd_mipi";
 static esp_err_t panel_mipi_del(esp_lcd_panel_t *panel);
 static esp_err_t panel_mipi_init(esp_lcd_panel_t *panel);
 static esp_err_t panel_mipi_reset(esp_lcd_panel_t *panel);
-static esp_err_t panel_mipi_invert_color(esp_lcd_panel_t *panel, bool invert_color_data);
-static esp_err_t panel_mipi_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
 static esp_err_t panel_mipi_disp_on_off(esp_lcd_panel_t *panel, bool on_off);
 
 esp_err_t esp_lcd_new_panel_mipi(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config, esp_lcd_panel_handle_t *ret_panel) {

@@ -8,7 +8,7 @@
 #define LCD_H_RES               800
 #define LCD_V_RES               480
 #define LCD_HSYNC               20
-#define LCD_HBP                 89
+#define LCD_HBP                 90
 #define LCD_HFP                 90
 #define LCD_VSYNC               8
 #define LCD_VBP                 8

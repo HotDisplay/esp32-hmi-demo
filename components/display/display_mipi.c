@@ -29,7 +29,7 @@ esp_err_t display_init_mipi(esp_lcd_panel_handle_t *out_panel) {
     esp_lcd_dsi_bus_config_t dsi_bus_config = {
         .bus_id = 0,
         .num_data_lanes = 2,
-        .lane_bit_rate_mbps = 600,
+        .lane_bit_rate_mbps = BIT_RATE_MBPS,
     };
 
     ESP_ERROR_CHECK(esp_lcd_new_dsi_bus(&dsi_bus_config, &dsi_bus_handle));

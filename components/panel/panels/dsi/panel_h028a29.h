@@ -2,23 +2,23 @@
 
 #include "esp_lcd_mipi.h"
 
-/* ===== Panel: H028A29 (2.8 inch / 540x540 / MIPI DSI / GT911) ===== */
+/* ===== Panel: H028A29 (2.8 inch / 540x540 / MIPI DSI / AXS15260D) ===== */
 /* TODO: 请按数据手册核对时序与初始化序列 */
 
 #define BSP_PANEL_NAME          "H028A29 (2.8 inch / 540x540)"
 
-#define LCD_FREQ_MHZ            32
+#define LCD_FREQ_MHZ            28
 #define LCD_H_RES               540
 #define LCD_V_RES               540
-#define LCD_HSYNC               140
-#define LCD_HBP                 140
-#define LCD_HFP                 4
-#define LCD_VSYNC               4
+#define LCD_HSYNC               10
+#define LCD_HBP                 100
+#define LCD_HFP                 100
+#define LCD_VSYNC               10
 #define LCD_VBP                 40
 #define LCD_VFP                 60
 
+#define BIT_RATE_MBPS           600
 #define LCD_NUM_FB              2
-#define LCD_PCLK_ACTIVE_NEG     true
 
 /* MIPI DPI input color format / controller color depth for this panel */
 #define PANEL_MIPI_COLOR_BITS   24   /* 16=RGB565, 18=RGB666, 24=RGB888 -> sets COLMOD */
@@ -26,8 +26,8 @@
 #define BSP_TOUCH_NONE           0
 #define BSP_TOUCH_GT911          1
 #define BSP_TOUCH_TYPE           BSP_TOUCH_GT911
-#define BSP_TOUCH_X_MAX          240
-#define BSP_TOUCH_Y_MAX          320
+#define BSP_TOUCH_X_MAX          540
+#define BSP_TOUCH_Y_MAX          540
 #define BSP_TOUCH_SWAP_XY        0
 
 /* ===== MIPI init command sequence (per-panel) =====

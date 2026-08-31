@@ -17,6 +17,7 @@
 #define LCD_VBP                 13
 #define LCD_VFP                 17
 
+#define BIT_RATE_MBPS           500
 #define LCD_NUM_FB              2
 
 /* MIPI DPI input color format / controller color depth for this panel */

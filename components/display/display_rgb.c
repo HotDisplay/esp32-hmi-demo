@@ -9,7 +9,6 @@
 
 static const char *TAG = "DISPLAY_RGB";
 
-#if CONFIG_DISPLAY_INTERFACE_RGB
 esp_err_t display_init_rgb(esp_lcd_panel_handle_t *out_panel) {
     ESP_LOGI(TAG, "Init RGB panel: %dx%d PCLK=%lu Hz", LCD_H_RES, LCD_V_RES, LCD_PIXEL_CLOCK_HZ);
 
@@ -61,5 +60,3 @@ esp_err_t display_init_rgb(esp_lcd_panel_handle_t *out_panel) {
     ESP_LOGI(TAG, "RGB panel ready");
     return ESP_OK;
 }
-
-#endif
