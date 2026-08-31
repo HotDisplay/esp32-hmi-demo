@@ -24,6 +24,9 @@ menu "Display Selection"
             help
                 SELECT RGB DISPLAY
 
+            config BSP_PANEL_RGB_H021A04
+                bool "H021A04 (2.1 inch / 540x540 / AXS15260D)"
+
             config BSP_PANEL_RGB_H050A29
                 bool "H050A29 (5.0 inch / 800x480 / GT911)"
 

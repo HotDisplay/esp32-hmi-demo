@@ -1,11 +1,13 @@
 #pragma once
 
 #include "sdkconfig.h"
-
-#ifdef CONFIG_BSP_PANEL_RGB_H050A29
+#ifdef CONFIG_BSP_PANEL_RGB_H021A04
+#include "panel_h021a04.h"
+#elif CONFIG_BSP_PANEL_RGB_H050A29
 #include "panel_h050a29.h"
 #elif CONFIG_BSP_PANEL_RGB_H070B26
 #include "panel_h070b26.h"
+
 #elif CONFIG_BSP_PANEL_MIPI_H028A29
 #include "panel_h028a29.h"
 #elif CONFIG_BSP_PANEL_MIPI_H035B16
