@@ -27,15 +27,22 @@ extern "C" {
 /* ===== Uniform BSP Interface ===== */
 
 /**
- * @brief Initialize BSP (backlight + touch + io expander)
- * @param[out] out_panel  LCD panel handle
- * @param[out] out_touch  touch handle (NULL if no touch)
+ * @brief Initialize board-level resources (io expander + touch + backlight)
+ *
+ * Initialization order:
+ *   1. IO expander (when the board has one)
+ *   2. Touch controller (when CONFIG_DISPLAY_USE_TOUCHPAD is set)
+ *   3. Backlight GPIO + PWM, kept OFF (see bsp_backlight_enable())
+ *
+ * The LCD panel is NOT created here. Call display_init() from the display
+ * component instead — this keeps bsp and display decoupled.
  */
-esp_err_t bsp_init(esp_lcd_panel_handle_t *out_panel, esp_lcd_touch_handle_t *out_touch);
+esp_err_t bsp_init(void);
 
-/* Set the panel handle created by display_init() (display component), so it is
- * visible to other modules through the extern `panel_handle` global. */
-void bsp_set_panel_handle(esp_lcd_panel_handle_t panel);
+/* Get the touch handle created by bsp_init().
+ * Returns NULL when touch is disabled or initialization failed, so callers
+ * must check the result before use. */
+esp_lcd_touch_handle_t bsp_get_touch_handle(void);
 
 /* Turn the backlight ON. Call this after LVGL init completes, so the panel is
  * only lit once a frame has been rendered. bsp_init() only configures the

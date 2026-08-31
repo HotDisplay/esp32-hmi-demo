@@ -2,6 +2,7 @@
 
 #include "esp_lcd_touch.h"
 #include "esp_lcd_touch_gt911.h"
+#include "esp_lcd_touch_axs15260d.h"
 
 #include "driver/gpio.h"
 #include "driver/ledc.h"
@@ -15,9 +16,8 @@
 
 static const char *TAG = "BSP";
 
-/* ===== Global panel/touch handles (used by lv_init.c via extern) ===== */
-esp_lcd_panel_handle_t panel_handle = NULL;
-esp_lcd_touch_handle_t touch_handle = NULL;
+/* ===== Board-level handle (private, exposed via bsp_get_touch_handle()) ===== */
+static esp_lcd_touch_handle_t s_touch_handle = NULL;
 
 #ifdef BSP_USE_IO_EXPANDER
 
@@ -120,8 +120,11 @@ void bsp_backlight_enable(void) {
 
 /* ===== Touch (internal) ===== */
 
-static esp_err_t bsp_touch_init_internal(esp_lcd_touch_handle_t *out_touch) {
-#if BSP_TOUCH_TYPE == BSP_TOUCH_GT911
+static esp_err_t bsp_touch_init_internal(void) {
+#if !defined(BSP_TOUCH_TYPE)
+    ESP_LOGW(TAG, "Touch not configured for this panel");
+    return ESP_OK;
+#else
     i2c_master_bus_handle_t i2c_bus = NULL;
     esp_lcd_panel_io_handle_t io_handle = NULL;
 
@@ -135,12 +138,20 @@ static esp_err_t bsp_touch_init_internal(esp_lcd_touch_handle_t *out_touch) {
     };
     ESP_RETURN_ON_ERROR(i2c_new_master_bus(&i2c_cfg, &i2c_bus), TAG, "i2c bus failed");
 
+    /* IO config and driver data must come from the same touch chip, otherwise
+     * the two get mismatched when switching panels. */
+#if BSP_TOUCH_TYPE == BSP_TOUCH_GT911
     esp_lcd_panel_io_i2c_config_t io_cfg = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
+    esp_lcd_touch_io_gt911_config_t tp_drv_cfg = { 0 };
+#elif BSP_TOUCH_TYPE == BSP_TOUCH_AXS15260D
+    esp_lcd_panel_io_i2c_config_t io_cfg = ESP_LCD_TOUCH_IO_I2C_AXS15260D_CONFIG();
+    esp_lcd_touch_io_axs15260d_config_t tp_drv_cfg = { 0 };
+#else
+    ESP_LOGW(TAG, "Unsupported touch type: %d", BSP_TOUCH_TYPE);
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
     io_cfg.scl_speed_hz = 400000;
-
-    esp_lcd_touch_io_gt911_config_t gt911_cfg = {
-        .dev_addr = io_cfg.dev_addr,
-    };
+    tp_drv_cfg.dev_addr = io_cfg.dev_addr;
 
     esp_lcd_touch_config_t touch_cfg = {
         .x_max = BSP_TOUCH_X_MAX,
@@ -153,7 +164,7 @@ static esp_err_t bsp_touch_init_internal(esp_lcd_touch_handle_t *out_touch) {
         .flags = {
             .swap_xy = BSP_TOUCH_SWAP_XY
         },
-        .driver_data = &gt911_cfg,
+        .driver_data = &tp_drv_cfg,
     };
 
 #ifdef BSP_IOEXP_CTP_RST
@@ -164,17 +175,21 @@ static esp_err_t bsp_touch_init_internal(esp_lcd_touch_handle_t *out_touch) {
 #endif
 
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_lcd_new_panel_io_i2c(i2c_bus, &io_cfg, &io_handle));
-    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_lcd_touch_new_i2c_gt911(io_handle, &touch_cfg, out_touch));
-#else
-    *out_touch = NULL;
-    ESP_LOGW(TAG, "Touch not configured");
+
+    /* A touch failure must not abort the whole boot: the display stays usable,
+     * s_touch_handle simply remains NULL and callers skip the input device. */
+#if BSP_TOUCH_TYPE == BSP_TOUCH_GT911
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_lcd_touch_new_i2c_gt911(io_handle, &touch_cfg, &s_touch_handle));
+#elif BSP_TOUCH_TYPE == BSP_TOUCH_AXS15260D
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_lcd_touch_new_i2c_axs15260d(io_handle, &touch_cfg, &s_touch_handle));
 #endif
     return ESP_OK;
+#endif /* !defined(BSP_TOUCH_TYPE) */
 }
 
 /* ===== Public BSP API ===== */
 
-esp_err_t bsp_init(esp_lcd_panel_handle_t *out_panel, esp_lcd_touch_handle_t *out_touch) {
+esp_err_t bsp_init(void) {
     ESP_LOGI(TAG, "Initializing BSP for board: %s", BSP_BOARD_NAME);
     ESP_LOGI(TAG, "LCD: %dx%d", LCD_H_RES, LCD_V_RES);
 
@@ -187,24 +202,20 @@ esp_err_t bsp_init(esp_lcd_panel_handle_t *out_panel, esp_lcd_touch_handle_t *ou
      *    display_init(), called from the application, to avoid a circular
      *    dependency between bsp and display). */
 #if CONFIG_DISPLAY_USE_TOUCHPAD
-    ESP_RETURN_ON_ERROR(bsp_touch_init_internal(&touch_handle), TAG, "touch init failed");
+    ESP_RETURN_ON_ERROR(bsp_touch_init_internal(), TAG, "touch init failed");
 #endif
 
     /* 3. Backlight: configure GPIO + PWM, but keep it OFF until LVGL is ready.
      *    The application calls bsp_backlight_enable() after lvgl_init(). */
     bsp_backlight_init();
 
-    /* Output handles */
-    if (out_touch) *out_touch = touch_handle;
 
     ESP_LOGI(TAG, "BSP init complete (io-expander + touch + backlight cfg; display via display_init)");
     return ESP_OK;
 }
 
-/* Set the panel handle produced by display_init() so other modules
- * (e.g. lv_init.c) can access it through the extern global. */
-void bsp_set_panel_handle(esp_lcd_panel_handle_t panel) {
-    panel_handle = panel;
+esp_lcd_touch_handle_t bsp_get_touch_handle(void) {
+    return s_touch_handle;
 }
 
 const char *bsp_board_name(void) {

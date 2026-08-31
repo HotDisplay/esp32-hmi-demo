@@ -30,19 +30,15 @@ void app_main(void) {
     ESP_LOGI(TAG, "Panel: %s", bsp_panel_name());
     ESP_LOGI(TAG, "Screen: %dx%d", bsp_get_screen_width(), bsp_get_screen_height());
 
-
-
-    /* Initialize BSP (backlight + touch) */
     esp_lcd_panel_handle_t panel = NULL;
-    esp_lcd_touch_handle_t touch = NULL;
-    ESP_ERROR_CHECK(bsp_init(&panel, &touch));
+    ESP_ERROR_CHECK(bsp_init());
 
     /* Initialize display interface (RGB / MIPI, dispatched by menuconfig) */
     ESP_ERROR_CHECK(display_init(&panel));
-    bsp_set_panel_handle(panel);
 
-    /* Start LVGL */
-    lvgl_init();
+    /* Start LVGL. Panel and touch handles are passed in explicitly, so nothing
+     * depends on module-global variables. */
+    lvgl_init(panel, bsp_get_touch_handle());
 
     /* After LVGL fully initialized (frame rendered): now turn on the backlight */
     bsp_backlight_enable();
