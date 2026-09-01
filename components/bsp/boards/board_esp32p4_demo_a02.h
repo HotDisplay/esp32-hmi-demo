@@ -58,6 +58,7 @@
 #define BSP_LCD_D15             GPIO_NUM_18   /* R4 */
 
 /* SD Card pins */
+#define BSP_SD_WIDTH            4
 #define BSP_SD1_D0              GPIO_NUM_39
 #define BSP_SD1_D1              GPIO_NUM_40
 #define BSP_SD1_D2              GPIO_NUM_41

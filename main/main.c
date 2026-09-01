@@ -12,6 +12,7 @@
 #include "lv_init.h"
 #include "wifi_init.h"
 #include "ethernet_init.h"
+#include "sdcard.h"
 
 static const char *TAG = "Main";
 
@@ -48,6 +49,9 @@ void app_main(void) {
 
     /* After LVGL fully initialized (frame rendered): now turn on the backlight */
     bsp_backlight_enable();
+
+    /* Init SDMMC Card*/
+    sdcard_init();
 
     /* Init Wi-Fi*/
 
