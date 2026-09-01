@@ -82,6 +82,11 @@ esp_err_t sdcard_init(void) {
 #endif
 
     ret = esp_vfs_fat_sdmmc_mount(mount_point, &host, &slot_config, &mount_config, &card);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to mount filesystem (%s). Check SD card presence", esp_err_to_name(ret));
+        sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle);
+        return ret;
+    }
     ESP_LOGI(TAG, "Filesystem mounted");
 
     // Card has been initialized, print its properties

@@ -14,6 +14,7 @@ idf_component_register(
          "ui/ui_sysinfo.c"
          "service/svc_sysinfo.c"
          "service/svc_net.c"
+         "service/svc_storage.c"
     INCLUDE_DIRS "."
                  "app"
                  "ui"
@@ -24,5 +25,6 @@ idf_component_register(
              esp_netif
              esp_system
              esp_timer
+             fatfs
              lvgl
 )
