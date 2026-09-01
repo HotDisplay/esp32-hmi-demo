@@ -15,9 +15,10 @@
 #include "esp_log.h"
 
 #include "lvgl.h"
-#include "lv_demos.h"
 
 #include "bsp.h"
+#include "lv_demos.h"
+#include "app_hmi_demo.h"
 
 static const char *TAG = "LV_PORT";
 
@@ -33,8 +34,6 @@ static const char *TAG = "LV_PORT";
 
 // LVGL library is not thread-safe, this example will call LVGL APIs from different tasks, so use a mutex to protect it
 static _lock_t lvgl_api_lock;
-
-extern void example_lvgl_demo_ui(lv_display_t *disp);
 
 #if CONFIG_DISPLAY_INTERFACE_RGB
 static bool notify_lvgl_flush_ready_rgb(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *event_data, void *user_ctx) {
@@ -179,8 +178,7 @@ void lvgl_init(esp_lcd_panel_handle_t panel, esp_lcd_touch_handle_t touch) {
     ESP_LOGI(TAG, "Display LVGL UI");
     // Lock the mutex due to the LVGL APIs are not thread-safe
     _lock_acquire(&lvgl_api_lock);
-    // example_lvgl_demo_ui(display);
-    // lv_demo_benchmark();
     lv_demo_widgets();
+    // app_hmi_demo();
     _lock_release(&lvgl_api_lock);
 }

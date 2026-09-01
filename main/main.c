@@ -6,9 +6,6 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
-#include "driver/i2c_master.h"
-#include "esp_io_expander_tca95xx_16bit.h"
-
 #include "bsp.h"
 #include "display.h"
 #include "touch.h"
