@@ -178,7 +178,7 @@ void lvgl_init(esp_lcd_panel_handle_t panel, esp_lcd_touch_handle_t touch) {
     ESP_LOGI(TAG, "Display LVGL UI");
     // Lock the mutex due to the LVGL APIs are not thread-safe
     _lock_acquire(&lvgl_api_lock);
-    lv_demo_widgets();
-    // app_hmi_demo();
+    // lv_demo_widgets();
+    app_hmi_demo();
     _lock_release(&lvgl_api_lock);
 }

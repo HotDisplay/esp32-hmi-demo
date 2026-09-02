@@ -148,7 +148,7 @@ static void bsp_backlight_set(uint32_t level, uint32_t brightness) {
 /* Turn the backlight ON. Call this only after LVGL has finished initializing,
  * so the panel is never lit with an unrendered frame. */
 void bsp_backlight_enable(void) {
-    bsp_backlight_set(LCD_BACKLIGHT_ON, 30);
+    bsp_backlight_set(LCD_BACKLIGHT_ON, 20);
 }
 
 /* Touch controller initialization lives in the `touch` component
