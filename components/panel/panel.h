@@ -14,6 +14,10 @@
 #include "panel_h035b16.h"
 #elif CONFIG_BSP_PANEL_MIPI_H043A8
 #include "panel_h043a8.h"
+#elif CONFIG_BSP_PANEL_MIPI_H055A01
+#include "panel_h055a01.h"
+#elif CONFIG_BSP_PANEL_MIPI_H055A05
+#include "panel_h055a05.h"
 #elif CONFIG_BSP_PANEL_MIPI_H050A11
 #include "panel_h050a11.h"
 #else

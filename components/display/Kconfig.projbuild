@@ -58,6 +58,14 @@ menu "Display Selection"
             config BSP_PANEL_MIPI_H043A8
                 bool "H043A8 (4.3 inch / 480x800 / GT911)"
                 select BSP_TOUCH_GT911
+
+            config BSP_PANEL_MIPI_H055A01
+                bool "H055A01 (5.0 inch / 720x1280 / GT911)"
+                select BSP_TOUCH_GT911
+
+            config BSP_PANEL_MIPI_H055A05
+                bool "H055A05 (5.5 inch / 720x1280 / GT911)"
+                select BSP_TOUCH_GT911
                 
             config BSP_PANEL_MIPI_H050A11
                 bool "H050A11 (5.0 inch / 480x854 / GT911)"
