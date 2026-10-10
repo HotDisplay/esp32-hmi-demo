@@ -58,25 +58,10 @@ dependencies:
       registry_url: https://components.espressif.com/
       type: service
     version: 9.5.0
-  waveshare/esp_lcd_touch_axs15260d:
-    component_hash: bbc3f2341770a020a3e848f017523a2f8855e00e119c0244417bbe1b8637ae52
-    dependencies:
-    - name: espressif/esp_lcd_touch
-      registry_url: https://components.espressif.com
-      require: public
-      version: ^1.1.0
-    - name: idf
-      require: private
-      version: '>=4.4.2'
-    source:
-      registry_url: https://components.espressif.com/
-      type: service
-    version: 1.0.0
 direct_dependencies:
 - espressif/esp_io_expander_tca95xx_16bit
 - espressif/esp_lcd_touch_gt911
 - lvgl/lvgl
-- waveshare/esp_lcd_touch_axs15260d
-manifest_hash: 10cafadcf7a12e9e4399ec8aa1f942c376223bfd70273d5465c0f0a25ab4cf93
+manifest_hash: 8b33693ae81bf0d1b0f674661f4d05d0ecc67d022d7fe3c1b9590ed7c0df001f
 target: esp32p4
 version: 3.0.0

@@ -28,8 +28,13 @@ static const char *TAG = "LV_PORT";
 #define LVGL_TASK_PRIORITY          10
 #define LVGL_TASK_MAX_DELAY_MS      500
 #define LVGL_TASK_MIN_DELAY_MS      1000 / CONFIG_FREERTOS_HZ
+#if CONFIG_DISPLAY_INTERFACE_RGB
+#define LV_COLOR_FORMAT             LV_COLOR_FORMAT_RGB565
+#define LV_PIXEL_SIZE               2
+#elif CONFIG_DISPLAY_INTERFACE_MIPI
 #define LV_COLOR_FORMAT             LV_COLOR_FORMAT_RGB888
 #define LV_PIXEL_SIZE               3
+#endif
 
 
 // LVGL library is not thread-safe, this example will call LVGL APIs from different tasks, so use a mutex to protect it

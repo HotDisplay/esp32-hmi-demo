@@ -201,8 +201,8 @@ esp_err_t bsp_display_reset(void) {
         return ESP_ERR_NOT_FOUND;
     }
     ESP_RETURN_ON_ERROR(esp_io_expander_set_dir(s_io_expander, BSP_IOEXP_DISP_RST, IO_EXPANDER_OUTPUT), TAG, "rst dir");
-    esp_io_expander_set_level(s_io_expander, BSP_IOEXP_DISP_RST, 0);
-    vTaskDelay(pdMS_TO_TICKS(10));
+    // esp_io_expander_set_level(s_io_expander, BSP_IOEXP_DISP_RST, 0);
+    // vTaskDelay(pdMS_TO_TICKS(10));
     esp_io_expander_set_level(s_io_expander, BSP_IOEXP_DISP_RST, 1);
     vTaskDelay(pdMS_TO_TICKS(120));
 #elif (BSP_DISP_RST >= 0)

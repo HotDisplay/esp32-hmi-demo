@@ -28,6 +28,10 @@ menu "Display Selection"
                 bool "H021A04 (2.1 inch / 540x540 / AXS15260D)"
                 select BSP_TOUCH_AXS15260D
 
+            config BSP_PANEL_RGB_H048A02
+                bool "H048A02 (4.8 inch / 480x1120 / GT911)"
+                select BSP_TOUCH_GT911
+
             config BSP_PANEL_RGB_H050A29
                 bool "H050A29 (5.0 inch / 800x480 / GT911)"
                 select BSP_TOUCH_GT911
