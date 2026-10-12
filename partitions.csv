@@ -3,3 +3,4 @@
 nvs,       data,    nvs,        0x11000,    24k,
 phy_init,  data,    phy,        0x17000,    4k,
 factory,   app,     factory,    0x20000,    2M,
+lcd_image, data,    0x40,       0x220000,   4M,

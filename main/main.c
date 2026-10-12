@@ -8,6 +8,7 @@
 
 #include "bsp.h"
 #include "display.h"
+#include "display_test.h"
 #include "touch.h"
 #include "lv_init.h"
 #include "wifi_init.h"
@@ -38,6 +39,11 @@ void app_main(void) {
 
     /* Initialize display interface (RGB / MIPI, dispatched by menuconfig) */
     ESP_ERROR_CHECK(display_init(&panel));
+
+#if CONFIG_DISPLAY_TEST_DEMO
+    ESP_ERROR_CHECK(display_test_run(panel));
+    return;
+#endif
 
     /* Touch controller is derived from the panel selection in menuconfig,
      * so no separate touch option has to be set here. */

@@ -241,6 +241,25 @@ ESP32-P4 + IDF 6.0.0 存在 DPI 回调字段兼容问题，
 现有 LVGL 事件及定时器回调已在组件任务的锁内执行。触摸句柄为空或注册失败时保持显示运行。
 上板验证应覆盖连续滑动、抬手、页面切换及长时间运行；编译成功不代表硬件防撕裂效果已验证。
 
+### 原生 LCD 测试
+
+`idf.py menuconfig → Display Test Demo → Run native LCD test instead of LVGL` 启用测试；
+关闭后恢复原有 LVGL 界面。测试模式不启动触摸、LVGL、SD 卡或网络。
+按红、绿、蓝、白、16 级灰阶、可选图片循环，每个画面停留 1 秒。
+灰阶根据屏幕宽高自动切换：横屏显示竖条（左黑右白），竖屏显示横条（上黑下白）。
+沿用所选 panel 的分辨率、时序和双帧缓冲；RGB 使用 RGB565，MIPI 使用 RGB888，
+提交画面后等待对应接口的刷新回调再复用旧帧缓冲。
+
+图片放在 `main/images/`，命名为 `test.png`、`test.jpg`、`test.jpeg` 或 `test.bmp`，只保留一个。
+建议按所选屏幕的原始分辨率准备图片；尺寸不一致时编译会拉伸到全屏。
+没有图片时自动跳过，有图片时转换工具需要 ESP-IDF Python 环境中的 Pillow
+（`python -m pip install Pillow`）。新增 `lcd_image` 数据分区占用 4 MiB 空闲 Flash，
+原有 NVS、PHY 和应用分区的位置及大小不变，Flash 容量至少为 8 MB。
+添加、替换、删除图片或切换 panel 后执行 `idf.py build flash`；
+图片分区会随完整烧录更新，单独烧录应用 bin 不会更新图片。
+运行时通过 `esp_partition_mmap()` 映射图片分区，再复制到空闲帧缓冲，
+避免循环中 `esp_partition_read()` 暂停 Cache/中断而使 RGB bounce buffer 供数不足。
+
 ### 新增一个 HMI 功能页
 
 | Step | File | Action |
