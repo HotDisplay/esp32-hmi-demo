@@ -143,8 +143,8 @@ static esp_err_t ethernet_install(esp_eth_handle_t *eth_handle_out) {
 
 esp_err_t ethernet_init(void) {
     // Initialize Ethernet driver
-    esp_eth_handle_t eth_handle;
-    ethernet_install(&eth_handle);
+    esp_eth_handle_t eth_handle = NULL;
+    ESP_RETURN_ON_ERROR(ethernet_install(&eth_handle), TAG, "install ethernet driver failed");
 
     // Initialize TCP/IP network interface aka the esp-netif (should be called only once in application)
     ESP_ERROR_CHECK(esp_netif_init());

@@ -38,7 +38,7 @@ void svc_storage_list_files(storage_filelist_t *out)
         if (ent->d_name[0] == '.') {
             continue;   /* 跳过 .  ..  以及隐藏文件 */
         }
-        strncpy(out->names[out->count], ent->d_name, SVC_STORAGE_NAME_MAX - 1);
+        strlcpy(out->names[out->count], ent->d_name, sizeof(out->names[0]));
         out->count++;
     }
     closedir(dir);
