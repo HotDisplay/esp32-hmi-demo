@@ -223,6 +223,24 @@ idf.py -p COM3 flash monitor    # Windows: COM3 / Linux: /dev/ttyUSB0
 
 ## Development Guide
 
+### LVGL 移植
+
+`components/gui/idf_component.yml` 使用 Registry 的 `espressif/esp_lvgl_port ^2.9.0`，
+`dependencies.lock` 固定本次解析为 2.9.0；LVGL 继续使用 9.5.0。
+`lv_init.c` 仅负责绑定现有显示、触摸句柄及创建 UI，任务、时钟、输入和刷新由组件管理。
+RGB 使用 RGB565、MIPI 使用 RGB888，均使用驱动的双帧缓冲、DIRECT 模式和防撕裂同步；
+RGB 的 `bb_mode` 对应 `display_init_rgb()` 中已启用的 bounce buffer。
+
+ESP32-P4 + IDF 6.0.0 存在 DPI 回调字段兼容问题，
+`cmake/esp_lvgl_port_compat.cmake` 只在构建目录生成修正副本，
+将 MIPI 的 `cbs.on_frame_buf_complete` 改为 `cbs.on_refresh_done`，保留 RGB 回调。
+不要手工修改 `managed_components`。组件版本、目标赋值或构建布局不匹配时配置会报错，
+需核对新版源码后再更新或移除修正。
+
+从其他任务调用 LVGL API 时必须使用 `lvgl_port_lock(0)` / `lvgl_port_unlock()`。
+现有 LVGL 事件及定时器回调已在组件任务的锁内执行。触摸句柄为空或注册失败时保持显示运行。
+上板验证应覆盖连续滑动、抬手、页面切换及长时间运行；编译成功不代表硬件防撕裂效果已验证。
+
 ### 新增一个 HMI 功能页
 
 | Step | File | Action |

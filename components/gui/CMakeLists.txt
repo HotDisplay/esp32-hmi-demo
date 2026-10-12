@@ -24,7 +24,7 @@ idf_component_register(
              esp_lcd_touch
              esp_netif
              esp_system
-             esp_timer
+             esp_lvgl_port
              fatfs
              lvgl
 )
