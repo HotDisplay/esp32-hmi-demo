@@ -17,8 +17,8 @@
 #define LCD_NUM_FB              2
 #define LCD_PCLK_ACTIVE_NEG     true
 
-/* Touch controller is chosen by Kconfig: the panel entry `select`s the matching
- * BSP_TOUCH_* symbol, so the chip is never defined here. */
+/* Touch coordinate limits follow the display geometry.
+ * Select the touch controller independently in menuconfig. */
 #define BSP_TOUCH_X_MAX         480
 #define BSP_TOUCH_Y_MAX         1120
 #define BSP_TOUCH_SWAP_XY       0

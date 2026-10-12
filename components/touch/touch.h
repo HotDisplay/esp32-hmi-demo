@@ -8,18 +8,16 @@ extern "C" {
 #endif
 
 /**
- * @brief Initialize the touch controller attached to the selected panel
+ * @brief Initialize the independently selected touch controller
  *
- * The touch chip is NOT configured separately: every panel entry in
- * menuconfig `select`s the matching BSP_TOUCH_* symbol (see
- * components/display/Kconfig.projbuild), so panel and touch chip can never
- * drift apart. Adding a new panel only requires one extra `select` line.
+ * Select the touch driver in menuconfig -> Touch Selection independently of
+ * the display panel. Coordinate limits follow the selected panel resolution.
  *
  * Must be called after bsp_init(), because the reset line may live on the
  * board's IO expander.
  *
  * @param[out] out_touch  Touch handle. Set to NULL when touch is disabled by
- *                        menuconfig, when the panel has no touch controller,
+ *                        menuconfig, when no touch driver is selected,
  *                        or when initialization failed (boot is not aborted
  *                        in that case — the device stays display-only).
  * @return

@@ -45,8 +45,7 @@ void app_main(void) {
     return;
 #endif
 
-    /* Touch controller is derived from the panel selection in menuconfig,
-     * so no separate touch option has to be set here. */
+    /* Touch controller is selected independently in menuconfig. */
     ESP_ERROR_CHECK(touch_init(&touch));
 
     /* Start LVGL. Panel and touch handles are passed in explicitly, so nothing

@@ -1,16 +1,29 @@
-# Touch controller is chosen automatically: every panel entry under
-# "Display Selection" `select`s the matching symbol here.
-#
-# These symbols intentionally have no prompt, which makes them hidden in
-# menuconfig — they can only be turned on by a panel's `select`, never set by
-# hand. That is what prevents panel and touch chip from drifting apart.
-# To change the chip for a panel, edit that panel's `select` line.
+menu "Touch Selection"
 
-config BSP_TOUCH_GT911
-    bool
+    config DISPLAY_USE_TOUCHPAD
+        bool "Enable Touch Panel"
+        default n
+        help
+            Enable touch independently of the selected display panel.
+            Native LCD test mode does not initialize touch.
 
-config BSP_TOUCH_AXS15260D
-    bool
+    choice BSP_TOUCH_CONTROLLER
+        prompt "Touch Controller"
+        depends on DISPLAY_USE_TOUCHPAD
+        default BSP_TOUCH_GT911
+        help
+            Select the driver for the touch controller connected to the board.
+            Changing the display panel does not change this selection.
 
-config BSP_TOUCH_NONE
-    bool
+        config BSP_TOUCH_GT911
+            bool "GT911"
+
+        config BSP_TOUCH_AXS15260D
+            bool "AXS15260D"
+    endchoice
+
+    config BSP_TOUCH_NONE
+        bool
+        default y if !DISPLAY_USE_TOUCHPAD
+
+endmenu

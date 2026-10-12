@@ -21,7 +21,7 @@ extern "C" {
 #error "No BSP board selected! Run: idf.py menuconfig -> BSP Board"
 #endif
 
-/* ===== Panel selection (timing + touch) ===== */
+/* ===== Panel selection (timing + touch coordinate limits) ===== */
 #include "panel.h"
 
 /* ===== Uniform BSP Interface ===== */

@@ -12,8 +12,7 @@
 #include "esp_check.h"
 #include "esp_log.h"
 
-/* Only the driver for the selected chip is compiled and linked
- * (see CMakeLists.txt for the matching conditional REQUIRES). */
+/* Controller creation follows the independent Touch Selection setting. */
 #if defined(CONFIG_BSP_TOUCH_GT911)
 #include "esp_lcd_touch_gt911.h"
 #elif defined(CONFIG_BSP_TOUCH_AXS15260D)
@@ -95,7 +94,7 @@ esp_err_t touch_init(esp_lcd_touch_handle_t *out_touch)
     return ESP_OK;
 
 #elif !defined(CONFIG_BSP_TOUCH_GT911) && !defined(CONFIG_BSP_TOUCH_AXS15260D)
-    ESP_LOGW(TAG, "This panel has no touch controller");
+    ESP_LOGW(TAG, "No touch driver selected");
     return ESP_OK;
 
 #else
@@ -113,7 +112,7 @@ esp_err_t touch_init(esp_lcd_touch_handle_t *out_touch)
     ESP_RETURN_ON_ERROR(i2c_new_master_bus(&i2c_cfg, &i2c_bus), TAG, "i2c bus failed");
 
     /* IO config and driver data must always come from the SAME chip, otherwise
-     * they get mismatched when the panel selection changes. */
+     * they get mismatched when the touch selection changes. */
 #if defined(CONFIG_BSP_TOUCH_GT911)
     esp_lcd_panel_io_i2c_config_t io_cfg = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
     esp_lcd_touch_io_gt911_config_t tp_drv_cfg = { 0 };

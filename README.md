@@ -87,8 +87,8 @@
 | **ESP32-S3** | ✓ | — | — | Planned |
 | **ESP32-P4** | ✓ | ✓ | — | Planned |
 
-Built on **LVGL 9.5** — Board / Interface / Panel selected independently via `menuconfig`.  
-基于 **LVGL 9.5** — Board / Interface / Panel 三级独立菜单选配。
+Built on **LVGL 9.5** — Board / Interface / Panel / Touch selected independently via `menuconfig`.
+基于 **LVGL 9.5** — Board / Interface / Panel / Touch 独立菜单选配。
 
 ---
 
@@ -100,12 +100,15 @@ Built on **LVGL 9.5** — Board / Interface / Panel selected independently via `
 │    Chip Target     →  idf.py set-target (S3 / P4)        │
 │    BSP Board       →  Board pinout (GPIO)               │
 │    Display Interface →  RGB / MIPI                       │
-│    BSP Panel        →  Resolution + timing + touch       │
+│    BSP Panel        →  Resolution + timing               │
+│    Touch Controller →  GT911 / AXS15260D / disabled       │
 └─────────────────────────────────────────────────────────┘
-              Board × Interface × Panel 独立组合
+              Board × Interface × Panel × Touch 独立组合
 ```
 
-触摸芯片无需单独配置：每个面板选项通过 Kconfig `select` 自动选定匹配的触摸芯片，面板与触摸不会配错。
+显示屏在 `Display Selection` 中选择，触摸驱动在 `Touch Selection` 中单独选择。
+例如 H028A29 可搭配 GT911 或 AXS15260D；切换显示屏不会改变已选触摸驱动。
+触摸坐标范围跟随显示屏分辨率，触摸的 I²C、RST 和 INT 引脚由板型定义。
 
 ---
 
@@ -175,11 +178,13 @@ cd esp32-display-driver
 # 选择目标芯片
 idf.py set-target esp32s3      # 或: idf.py set-target esp32p4
 
-# 配置：选择 Board + Interface + Panel
+# 配置：选择 Board + Interface + Panel + Touch
 idf.py menuconfig
 #   → BSP Board Selection（板型）
 #   → Display Selection → Display Interface（RGB / MIPI）
 #   → Display Selection → Panel（屏型号）
+#   → Touch Selection → Enable Touch Panel（启用触摸，默认关闭）
+#   → Touch Selection → Touch Controller（GT911 / AXS15260D）
 
 # 编译、烧录、监视
 idf.py build
@@ -205,20 +210,20 @@ idf.py -p COM3 flash monitor    # Windows: COM3 / Linux: /dev/ttyUSB0
 
 ### Panels
 
-| Panel | Size | Resolution | Interface | Touch |
-|-------|:----:|:----------:|:---------:|:-----:|
-| H021A04 | 2.1" | 540×540 | RGB565 | AXS15260D |
-| H034A04 | 3.4" 圆屏 | 800×800 | RGB565 | 无触摸 |
-| H048A02 | 4.8" | 480×1120 | RGB565 | GT911 |
-| **H050A29** | 5.0" | 800×480 | RGB565 | GT911 |
-| H070B26 | 7.0" | 1024×600 | RGB565 | GT911 |
-| H028A29 | 2.8" | 540×540 | MIPI DSI | AXS15260D |
-| H035B16 | 3.5" | 640×480 | MIPI DSI | GT911 |
-| H043A8 | 4.3" | 480×800 | MIPI DSI | GT911 |
-| H050A11 | 5.0" | 480×854 | MIPI DSI | GT911 |
+| Panel | Size | Resolution | Interface |
+|-------|:----:|:----------:|:---------:|
+| H021A04 | 2.1" | 540×540 | RGB565 |
+| H034A04 | 3.4" 圆屏 | 800×800 | RGB565 |
+| H048A02 | 4.8" | 480×1120 | RGB565 |
+| **H050A29** | 5.0" | 800×480 | RGB565 |
+| H070B26 | 7.0" | 1024×600 | RGB565 |
+| H028A29 | 2.8" | 540×540 | MIPI DSI |
+| H035B16 | 3.5" | 640×480 | MIPI DSI |
+| H043A8 | 4.3" | 480×800 | MIPI DSI |
+| H050A11 | 5.0" | 480×854 | MIPI DSI |
 
 > 同一块板的 FPC 座兼容同接口的多种屏，仅需切换屏参。  
-> 触摸芯片由面板选项自动 `select`，无需单独配置。
+> 触摸驱动独立选择，请根据实际连接的触摸芯片配置；未连接触摸时关闭 `Enable Touch Panel`。
 
 ---
 
@@ -282,7 +287,7 @@ ESP32-P4 + IDF 6.0.0 存在 DPI 回调字段兼容问题，
 | 2 | `components/bsp/Kconfig.projbuild` | 加 `config BSP_BOARD_XXX` |
 | 3 | `components/bsp/bsp.h` | 加 `#elif CONFIG_BSP_BOARD_XXX` |
 | **新面板** 1 | `components/panel/panels/{rgb,dsi}/panel_xxx.h` | 定义时序 + 分辨率 |
-| 2 | `components/display/Kconfig.projbuild` | 加 `config BSP_PANEL_XXX` + `select BSP_TOUCH_*` |
+| 2 | `components/display/Kconfig.projbuild` | 加 `config BSP_PANEL_XXX`，不绑定触摸驱动 |
 | 3 | `components/panel/panel.h` | 加 `#elif CONFIG_BSP_PANEL_XXX` |
 | **新接口** 1 | `components/display/display_xxx.c` | 实现 `display_init_xxx()` |
 | 2 | `components/display/Kconfig.projbuild` | 加接口 + 芯片依赖 |
