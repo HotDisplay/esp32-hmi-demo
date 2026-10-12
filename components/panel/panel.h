@@ -3,6 +3,8 @@
 #include "sdkconfig.h"
 #ifdef CONFIG_BSP_PANEL_RGB_H021A04
 #include "panel_h021a04.h"
+#elif CONFIG_BSP_PANEL_RGB_H034A04
+#include "panel_h034a04.h"
 #elif CONFIG_BSP_PANEL_RGB_H048A02
 #include "panel_h048a02.h"
 #elif CONFIG_BSP_PANEL_RGB_H050A29

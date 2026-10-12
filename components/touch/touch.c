@@ -22,7 +22,9 @@
 
 static const char *TAG = "TOUCH";
 
+#if defined(CONFIG_DISPLAY_USE_TOUCHPAD) && (defined(CONFIG_BSP_TOUCH_GT911) || defined(CONFIG_BSP_TOUCH_AXS15260D))
 static esp_lcd_touch_handle_t s_touch_handle = NULL;
+#endif
 
 /* ===== Per-chip reset sequences =====================================
  * Each controller latches its I2C address differently, so the sequences are

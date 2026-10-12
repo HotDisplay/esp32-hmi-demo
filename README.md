@@ -208,6 +208,7 @@ idf.py -p COM3 flash monitor    # Windows: COM3 / Linux: /dev/ttyUSB0
 | Panel | Size | Resolution | Interface | Touch |
 |-------|:----:|:----------:|:---------:|:-----:|
 | H021A04 | 2.1" | 540×540 | RGB565 | AXS15260D |
+| H034A04 | 3.4" 圆屏 | 800×800 | RGB565 | 无触摸 |
 | H048A02 | 4.8" | 480×1120 | RGB565 | GT911 |
 | **H050A29** | 5.0" | 800×480 | RGB565 | GT911 |
 | H070B26 | 7.0" | 1024×600 | RGB565 | GT911 |
