@@ -19,15 +19,19 @@ static const char *TAG = "BSP";
 static esp_io_expander_handle_t s_io_expander = NULL;
 static i2c_master_bus_handle_t s_io_expander_i2c_bus = NULL;
 
-static void bsp_io_expander_init(void) {
+static esp_err_t bsp_io_expander_init(void) {
     const i2c_master_bus_config_t io_expander_i2c_config = {
         .i2c_port = I2C_NUM_1,
         .sda_io_num = BSP_I2C1_SDA,
         .scl_io_num = BSP_I2C1_SCL,
         .clk_source = I2C_CLK_SRC_DEFAULT,
     };
-    i2c_new_master_bus(&io_expander_i2c_config, &s_io_expander_i2c_bus);
-    esp_io_expander_new_i2c_tca95xx_16bit(s_io_expander_i2c_bus, ESP_IO_EXPANDER_I2C_TCA9555_ADDRESS_010, &s_io_expander);
+    esp_err_t err = i2c_new_master_bus(&io_expander_i2c_config, &s_io_expander_i2c_bus);
+    ESP_RETURN_ON_ERROR(err, TAG, "IO expander I2C bus init failed: %s (0x%x)", esp_err_to_name(err), err);
+
+    err = esp_io_expander_new_i2c_tca95xx_16bit(s_io_expander_i2c_bus, ESP_IO_EXPANDER_I2C_TCA9555_ADDRESS_010, &s_io_expander);
+    ESP_RETURN_ON_ERROR(err, TAG, "IO expander init failed: %s (0x%x)", esp_err_to_name(err), err);
+    return ESP_OK;
 }
 
 #endif /* BSP_USE_IO_EXPANDER */
@@ -162,7 +166,7 @@ esp_err_t bsp_init(void) {
 
     /* 1. IO Expander init (must precede touch reset on expander pins) */
 #ifdef BSP_USE_IO_EXPANDER
-    bsp_io_expander_init();
+    ESP_RETURN_ON_ERROR(bsp_io_expander_init(), TAG, "IO expander initialization failed");
 #endif
 
     /* 2. Backlight: configure GPIO + PWM, but keep it OFF until LVGL is ready.
