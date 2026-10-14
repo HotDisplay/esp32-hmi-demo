@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,11 +26,14 @@ typedef struct {
     char  names[SVC_STORAGE_MAX_FILES][SVC_STORAGE_NAME_MAX];
 } storage_filelist_t;
 
-/* 查询 SD 卡容量信息。UI 层只依赖本函数，不直接碰 VFS / fatfs。 */
-void svc_storage_get_info(storage_info_t *out);
+/* 首次进入 SD 页面时启动一个后台查询任务，后续调用复用该任务。 */
+esp_err_t svc_storage_init(void);
 
-/* 列出 /sdcard 根目录条目（最多 SVC_STORAGE_MAX_FILES 个，跳过 . 开头项）。 */
-void svc_storage_list_files(storage_filelist_t *out);
+/* 请求后台更新容量和根目录条目；不等待文件系统操作。 */
+void svc_storage_request_refresh(void);
+
+/* 复制同一次查询的缓存结果；首次查询完成前返回 false。 */
+bool svc_storage_get_snapshot(storage_info_t *info, storage_filelist_t *files);
 
 #ifdef __cplusplus
 }

@@ -26,5 +26,6 @@ idf_component_register(
              esp_system
              esp_lvgl_port
              fatfs
+             freertos
              lvgl
 )

@@ -5,16 +5,20 @@
 
 #include <stdio.h>
 
-/* 定时刷新回调：读容量 + 文件列表并更新 label */
+/* 定时刷新回调：显示后台查询结果，并请求下次更新 */
 static void refresh_cb(lv_timer_t *timer)
 {
     lv_obj_t *lbl = (lv_obj_t *)lv_timer_get_user_data(timer);
 
     storage_info_t info;
-    svc_storage_get_info(&info);
+    storage_filelist_t files;
+    bool ready = svc_storage_get_snapshot(&info, &files);
+    svc_storage_request_refresh();
 
     char buf[512];
-    if (!info.mounted) {
+    if (!ready) {
+        snprintf(buf, sizeof(buf), "SD Card: Reading ...");
+    } else if (!info.mounted) {
         snprintf(buf, sizeof(buf), "SD Card: Not mounted\n\nInsert SD card");
     } else {
         int off = snprintf(buf, sizeof(buf),
@@ -24,8 +28,6 @@ static void refresh_cb(lv_timer_t *timer)
                            (unsigned long long)(info.total_bytes / 1024 / 1024),
                            (unsigned long long)(info.free_bytes / 1024 / 1024));
 
-        storage_filelist_t files;
-        svc_storage_list_files(&files);
         if (files.count == 0) {
             off += snprintf(buf + off, sizeof(buf) - off, "  (empty)");
         }
@@ -36,17 +38,28 @@ static void refresh_cb(lv_timer_t *timer)
     lv_label_set_text(lbl, buf);
 }
 
+static void delete_cb(lv_event_t *e)
+{
+    lv_timer_delete((lv_timer_t *)lv_event_get_user_data(e));
+}
+
 lv_obj_t *ui_sdcard_create(lv_event_cb_t back_cb)
 {
     lv_obj_t *scr = ui_common_create_screen("SD Card", back_cb);
+
+    if (svc_storage_init() != ESP_OK) {
+        ui_common_add_placeholder(scr, "SD Card: Query task unavailable");
+        return scr;
+    }
 
     lv_obj_t *lbl = lv_label_create(scr);
     lv_obj_set_style_text_color(lbl, UI_COLOR_TEXT, 0);
     lv_obj_set_style_text_line_space(lbl, 4, 0);
     lv_obj_align(lbl, LV_ALIGN_TOP_LEFT, 16, 64);
 
-    /* 每 1 秒刷新。SD 卡挂载在 lvgl 之后才执行，故首帧可能未挂载，靠定时刷新更新。 */
+    /* 每 1 秒请求后台查询；页面删除后停止请求。 */
     lv_timer_t *timer = lv_timer_create(refresh_cb, 1000, lbl);
+    lv_obj_add_event_cb(scr, delete_cb, LV_EVENT_DELETE, timer);
     refresh_cb(timer);   /* 立即刷新一次 */
 
     return scr;
