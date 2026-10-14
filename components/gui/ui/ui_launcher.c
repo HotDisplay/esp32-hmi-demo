@@ -65,7 +65,8 @@ lv_obj_t *ui_launcher_create(lv_event_cb_t card_cb)
     /* 卡片网格：2 列 4 行，等分铺满 */
     lv_obj_t *grid = lv_obj_create(cont);
     lv_obj_remove_style_all(grid);
-    lv_obj_set_size(grid, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_width(grid, LV_PCT(100));
+    lv_obj_set_flex_grow(grid, 1);
     lv_obj_set_style_pad_column(grid, 12, 0);
     lv_obj_set_style_pad_row(grid, 12, 0);
 

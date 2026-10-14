@@ -28,6 +28,11 @@ static void refresh_cb(lv_timer_t *timer)
     lv_label_set_text(lbl, buf);
 }
 
+static void delete_cb(lv_event_t *e)
+{
+    lv_timer_delete((lv_timer_t *)lv_event_get_user_data(e));
+}
+
 lv_obj_t *ui_ethernet_create(lv_event_cb_t back_cb)
 {
     lv_obj_t *scr = ui_common_create_screen("Ethernet", back_cb);
@@ -39,6 +44,7 @@ lv_obj_t *ui_ethernet_create(lv_event_cb_t back_cb)
 
     /* 每 1 秒刷新一次。DHCP 异步拿到 IP，故需定时刷新；链路状态也可能变化。 */
     lv_timer_t *timer = lv_timer_create(refresh_cb, 1000, lbl);
+    lv_obj_add_event_cb(scr, delete_cb, LV_EVENT_DELETE, timer);
     refresh_cb(timer);   /* 立即刷新一次，避免首屏空白 */
 
     return scr;

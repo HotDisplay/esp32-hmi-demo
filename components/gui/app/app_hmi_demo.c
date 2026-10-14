@@ -24,7 +24,7 @@ static void on_back(lv_event_t *e)
 {
     (void)e;
     if (s_launcher) {
-        lv_scr_load(s_launcher);
+        lv_screen_load_anim(s_launcher, LV_SCREEN_LOAD_ANIM_NONE, 0, 0, true);
     }
 }
 

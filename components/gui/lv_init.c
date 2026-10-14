@@ -79,7 +79,7 @@ void lvgl_init(esp_lcd_panel_handle_t panel, esp_lcd_touch_handle_t touch) {
 
     ESP_LOGI(TAG, "Display LVGL UI");
     ESP_ERROR_CHECK(lvgl_port_lock(0) ? ESP_OK : ESP_ERR_TIMEOUT);
-    lv_demo_widgets();
-    // app_hmi_demo();
+    // lv_demo_widgets();
+    app_hmi_demo();
     lvgl_port_unlock();
 }
