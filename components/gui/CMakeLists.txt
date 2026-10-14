@@ -1,5 +1,6 @@
 idf_component_register(
     SRCS "lv_init.c"
+         "gui_touch.c"
          "app/app_hmi_demo.c"
          "ui/ui_theme.c"
          "ui/ui_common.c"
@@ -28,4 +29,5 @@ idf_component_register(
              fatfs
              freertos
              lvgl
+    PRIV_REQUIRES esp_timer
 )

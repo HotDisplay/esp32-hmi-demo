@@ -7,6 +7,7 @@
 #include "bsp.h"
 #include "lv_demos.h"
 #include "app_hmi_demo.h"
+#include "gui_touch.h"
 
 static const char *TAG = "LV_PORT";
 
@@ -65,11 +66,7 @@ void lvgl_init(esp_lcd_panel_handle_t panel, esp_lcd_touch_handle_t touch) {
 
 #if CONFIG_DISPLAY_USE_TOUCHPAD
     if (touch != NULL) {
-        const lvgl_port_touch_cfg_t touch_cfg = {
-            .disp = display,
-            .handle = touch,
-        };
-        if (lvgl_port_add_touch(&touch_cfg) == NULL) {
+        if (gui_touch_add(display, touch) == NULL) {
             ESP_LOGW(TAG, "Touch registration failed, LVGL runs display-only");
         }
     } else {
