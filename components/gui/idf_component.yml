@@ -1,2 +1,8 @@
 dependencies:
   espressif/esp_lvgl_port: "^2.9.0"
+  espressif/esp_video:
+    version: "2.5.0"
+    matches:
+      - if: "$CONFIG{GUI_CSI_CAMERA} == True"
+    rules:
+      - if: "target == esp32p4"

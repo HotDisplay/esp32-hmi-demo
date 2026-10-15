@@ -9,6 +9,14 @@
 
 static const char *TAG = "DISPLAY_RGB";
 
+#if CONFIG_GUI_CSI_CAMERA_RGB_DIRECT_DMA
+#define RGB_BOUNCE_LINES 0
+#elif CONFIG_GUI_CSI_CAMERA
+#define RGB_BOUNCE_LINES 20
+#else
+#define RGB_BOUNCE_LINES 10
+#endif
+
 esp_err_t display_init_rgb(esp_lcd_panel_handle_t *out_panel) {
     ESP_LOGI(TAG, "Init RGB panel: %dx%d PCLK=%lu Hz", LCD_H_RES, LCD_V_RES, LCD_PIXEL_CLOCK_HZ);
 
@@ -16,7 +24,7 @@ esp_err_t display_init_rgb(esp_lcd_panel_handle_t *out_panel) {
         .data_width = RGB_LCD_DATA_BITS,
         .dma_burst_size = 64,
         .num_fbs = LCD_NUM_FB,
-        .bounce_buffer_size_px = 10 * LCD_H_RES, //Bounce buffer
+        .bounce_buffer_size_px = RGB_BOUNCE_LINES * LCD_H_RES, // Allow margin for CSI/PPA memory traffic
         .clk_src = LCD_CLK_SRC_DEFAULT,
         .disp_gpio_num = -1, // DISP/EN is driven by the BSP (expander on some boards)
         .pclk_gpio_num = BSP_LCD_PCLK,
@@ -57,6 +65,7 @@ esp_err_t display_init_rgb(esp_lcd_panel_handle_t *out_panel) {
     ESP_RETURN_ON_ERROR(bsp_display_reset(), TAG, "display reset");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_init(*out_panel), TAG, "panel init");
 
-    ESP_LOGI(TAG, "RGB panel ready");
+    ESP_LOGI(TAG, "RGB panel ready: %s, bounce lines=%d",
+             RGB_BOUNCE_LINES ? "bounce buffer" : "direct DMA", RGB_BOUNCE_LINES);
     return ESP_OK;
 }

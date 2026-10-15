@@ -51,11 +51,18 @@ void lvgl_init(esp_lcd_panel_handle_t panel, esp_lcd_touch_handle_t touch) {
 #if CONFIG_DISPLAY_INTERFACE_RGB
     const lvgl_port_display_rgb_cfg_t rgb_cfg = {
         .flags = {
+#if CONFIG_GUI_CSI_CAMERA_RGB_DIRECT_DMA
+            .bb_mode = false,
+#else
             .bb_mode = true, // display_init_rgb() enables bounce buffers
+#endif
             .avoid_tearing = true,
         },
     };
     lv_display_t *display = lvgl_port_add_disp_rgb(&display_cfg, &rgb_cfg);
+#if CONFIG_GUI_CSI_CAMERA_RGB_DIRECT_DMA
+    ESP_LOGI(TAG, "RGB direct DMA diagnostic: two VSYNC waits per frame");
+#endif
 #elif CONFIG_DISPLAY_INTERFACE_MIPI
     const lvgl_port_display_dsi_cfg_t dsi_cfg = {
         .flags.avoid_tearing = true,

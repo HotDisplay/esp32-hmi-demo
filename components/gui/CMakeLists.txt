@@ -1,3 +1,8 @@
+set(camera_requires "")
+if(IDF_TARGET STREQUAL "esp32p4")
+    list(APPEND camera_requires esp_driver_i2c esp_driver_ppa)
+endif()
+
 idf_component_register(
     SRCS "lv_init.c"
          "gui_touch.c"
@@ -16,6 +21,7 @@ idf_component_register(
          "service/svc_sysinfo.c"
          "service/svc_net.c"
          "service/svc_storage.c"
+         "service/svc_camera.c"
     INCLUDE_DIRS "."
                  "app"
                  "ui"
@@ -29,5 +35,7 @@ idf_component_register(
              fatfs
              freertos
              lvgl
-    PRIV_REQUIRES esp_timer
+    PRIV_REQUIRES esp_timer ${camera_requires}
 )
+
+idf_component_optional_requires(PRIVATE esp_video esp_cam_sensor)

@@ -1,0 +1,42 @@
+menu "CSI Camera Demo"
+    config GUI_CSI_CAMERA
+        bool "Enable CSI camera preview"
+        depends on IDF_TARGET_ESP32P4 && SPIRAM
+        default y
+        select ESP_VIDEO_ENABLE_MIPI_CSI_VIDEO_DEVICE
+        select ESP_VIDEO_ENABLE_ISP_VIDEO_DEVICE
+        select ESP_VIDEO_ENABLE_ISP_PIPELINE_CONTROLLER
+        select ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS if DISPLAY_INTERFACE_RGB
+        # CSI preview uses no H.264 codec; omit esp_video's optional codec dependency.
+        select ESP_VIDEO_USE_CUSTOMIZED_ESP_H264_VERSION
+        select CAMERA_SC2336
+        select CAMERA_SC2336_AUTO_DETECT_MIPI_INTERFACE_SENSOR
+        select CAMERA_OV5647
+        select CAMERA_OV5647_AUTO_DETECT_MIPI_INTERFACE_SENSOR
+        help
+            Preview the official EV Board SC2336 or OV5647 CSI camera.
+            The DEMO-A02 camera shares I2C0 with touch (SDA27, SCL26).
+
+    config GUI_CSI_CAMERA_USE_PPA
+        bool "Use PPA for camera preview scaling"
+        depends on GUI_CSI_CAMERA
+        default y if DISPLAY_INTERFACE_MIPI
+        default n
+        help
+            Use hardware scaling for MIPI displays. RGB uses CPU scaling
+            by default to isolate PPA cache/DMA interaction with RGB scanout.
+            Both paths keep the same preview size and frame rate limit.
+
+    config GUI_CSI_CAMERA_RGB_DIRECT_DMA
+        bool "Use direct RGB DMA (diagnostic)"
+        depends on GUI_CSI_CAMERA && DISPLAY_INTERFACE_RGB && !DISPLAY_TEST_DEMO
+        default n
+        help
+            Scan PSRAM frame buffers directly instead of filling RGB bounce
+            buffers in interrupts. Use this to isolate RGB/CSI contention.
+            IDF 6.0.0 and esp_lvgl_port 2.9.0 use a conservative two-VSYNC
+            wait before reusing a frame buffer; GUI frame rate is reduced.
+endmenu
+
+config ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS_MAX_LEN
+    default 0x1000 if GUI_CSI_CAMERA && DISPLAY_INTERFACE_RGB
