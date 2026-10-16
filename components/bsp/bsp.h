@@ -50,7 +50,7 @@ esp_err_t bsp_init(void);
 /**
  * @brief Drive the touch reset pin
  *
- * @param asserted  true = hold the chip in reset (low), false = release (high)
+ * @param level  1 = hold the chip in reset (low), 0 = release (high)
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NOT_SUPPORTED when this board has no touch reset pin

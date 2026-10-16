@@ -67,7 +67,7 @@ esp_err_t bsp_touch_set_reset(int level) {
         .pin_bit_mask = 1ULL << BSP_CTP_RST,
     };
     ESP_RETURN_ON_ERROR(gpio_config(&cfg), TAG, "ctp rst cfg");
-    ESP_RETURN_ON_ERROR(gpio_set_level(BSP_CTP_RST, asserted ? 0 : 1), TAG, "ctp rst level");
+    ESP_RETURN_ON_ERROR(gpio_set_level(BSP_CTP_RST, level ? 0 : 1), TAG, "ctp rst level");
     return ESP_OK;
 #else
     return ESP_ERR_NOT_SUPPORTED;
