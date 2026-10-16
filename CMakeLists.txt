@@ -6,4 +6,5 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(esp32-hmi-demo)
 
 include(cmake/esp_lvgl_port_compat.cmake)
+include(cmake/esp_hosted_reset_compat.cmake)
 include(cmake/display_test_image.cmake)

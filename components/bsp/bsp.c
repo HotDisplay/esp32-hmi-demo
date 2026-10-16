@@ -36,6 +36,22 @@ static esp_err_t bsp_io_expander_init(void) {
 
 #endif /* BSP_USE_IO_EXPANDER */
 
+esp_err_t bsp_wifi_set_reset(int level) {
+#if defined(BSP_IOEXP_C6_RESET)
+    if (level != 0 && level != 1) return ESP_ERR_INVALID_ARG;
+    if (s_io_expander == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    /* The driver initializes the output latch HIGH and requires output mode
+     * before set_level(). The board Wi-Fi hook owns the reset sequence. */
+    ESP_RETURN_ON_ERROR(esp_io_expander_set_dir(s_io_expander, BSP_IOEXP_C6_RESET, IO_EXPANDER_OUTPUT), TAG, "C6 EN direction");
+    return esp_io_expander_set_level(s_io_expander, BSP_IOEXP_C6_RESET, level);
+#else
+    (void)level;
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
 /* Touch pin primitives.
  *
  * The BSP only knows WHERE these pins are (plain MCU GPIO or IO expander

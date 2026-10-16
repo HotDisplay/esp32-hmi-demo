@@ -87,6 +87,9 @@ esp_err_t bsp_display_reset(void);
  * SLEEP is active-high (low = sleep). */
 esp_err_t bsp_display_enable(bool on);
 
+/* Set C6 EN through the existing IO expander: low resets, high releases. */
+esp_err_t bsp_wifi_set_reset(int level);
+
 const char *bsp_board_name(void);
 const char *bsp_panel_name(void);
 uint16_t    bsp_get_screen_width(void);

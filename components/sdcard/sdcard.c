@@ -47,6 +47,10 @@ esp_err_t sdcard_init(void) {
     // For setting a specific frequency, use host.max_freq_khz (range 400kHz - 40MHz for SDMMC)
     // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+#if CONFIG_BSP_BOARD_ESP32P4_DEMO_A02
+    /* BSP_SD1 is wired to Slot 0 IOMUX; Slot 1 belongs to C6 SDIO. */
+    host.slot = SDMMC_HOST_SLOT_0;
+#endif
 
     sd_pwr_ctrl_ldo_config_t ldo_config = {
         .ldo_chan_id = 4,
