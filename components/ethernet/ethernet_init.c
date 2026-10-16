@@ -148,10 +148,7 @@ esp_err_t ethernet_init(void) {
     esp_eth_handle_t eth_handle = NULL;
     ESP_RETURN_ON_ERROR(ethernet_install(&eth_handle), TAG, "install ethernet driver failed");
 
-    // Initialize TCP/IP network interface aka the esp-netif (should be called only once in application)
-    ESP_ERROR_CHECK(esp_netif_init());
-    // Create default event loop that running in background
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    /* app_main initializes the shared TCP/IP stack and default event loop. */
 
     // Create instance of esp-netif for Ethernet
     // Use ESP_NETIF_DEFAULT_ETH when just one Ethernet interface is used and you don't need to modify

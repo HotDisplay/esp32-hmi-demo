@@ -20,6 +20,7 @@ idf_component_register(
          "ui/ui_sysinfo.c"
          "service/svc_sysinfo.c"
          "service/svc_net.c"
+         "service/svc_wifi.c"
          "service/svc_storage.c"
          "service/svc_camera.c"
     INCLUDE_DIRS "."
@@ -34,6 +35,7 @@ idf_component_register(
              esp_lvgl_port
              fatfs
              freertos
+             wifi
              lvgl
     PRIV_REQUIRES esp_timer ${camera_requires}
 )

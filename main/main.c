@@ -5,13 +5,15 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "esp_netif.h"
+#include "esp_event.h"
 
 #include "bsp.h"
 #include "display.h"
 #include "display_test.h"
 #include "touch.h"
 #include "lv_init.h"
-#include "wifi_init.h"
+#include "svc_wifi.h"
 #include "ethernet_init.h"
 #include "sdcard.h"
 
@@ -48,21 +50,19 @@ void app_main(void) {
     /* Touch controller is selected independently in menuconfig. */
     ESP_ERROR_CHECK(touch_init(&touch));
 
+    /* Wi-Fi and Ethernet share the TCP/IP stack and default event loop. */
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    /* Initialize Slot 0 before the Wi-Fi worker opens C6 SDIO on Slot 1. */
+    sdcard_init();
+
     /* Start LVGL. Panel and touch handles are passed in explicitly, so nothing
      * depends on module-global variables. */
     lvgl_init(panel, touch);
 
     /* After LVGL fully initialized (frame rendered): now turn on the backlight */
     bsp_backlight_enable();
-
-    /* Init SDMMC Card*/
-    sdcard_init();
-
-    /* Init Wi-Fi*/
-
-#ifdef CONFIG_ESP_WIFI_ENABLED
-    wifi_init();
-#endif
 
 #ifdef CONFIG_SOC_EMAC_SUPPORTED
     ethernet_init();
