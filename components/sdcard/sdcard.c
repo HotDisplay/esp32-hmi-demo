@@ -23,6 +23,10 @@
 static const char *TAG = "SDCARD_INIT";
 
 esp_err_t sdcard_init(void) {
+#if !defined(BSP_SD_WIDTH)
+    ESP_LOGW(TAG, "SD card pins are not defined for this board");
+    return ESP_ERR_NOT_SUPPORTED;
+#else
 
     // Options for mounting the filesystem.
     // If format_if_mount_failed is set to true, SD card will be partitioned and
@@ -93,6 +97,7 @@ esp_err_t sdcard_init(void) {
     sdmmc_card_print_info(stdout, card);
 
     return ESP_OK;
+#endif
 }
 
 

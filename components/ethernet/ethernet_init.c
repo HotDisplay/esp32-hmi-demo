@@ -13,7 +13,9 @@
 #include "sdkconfig.h"
 
 #include "bsp.h"
+#include "soc/soc_caps.h"
 
+#if SOC_EMAC_SUPPORTED
 static const char *TAG = "Ethernet_Init";
 
 /** Event handler for Ethernet events */
@@ -169,3 +171,8 @@ esp_err_t ethernet_init(void) {
 
     return ESP_OK;
 }
+#else
+esp_err_t ethernet_init(void) {
+    return ESP_ERR_NOT_SUPPORTED;
+}
+#endif
