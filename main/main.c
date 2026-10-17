@@ -28,6 +28,10 @@ void app_main(void) {
         err = nvs_flash_init();
     }
 
+    /* Wi-Fi and Ethernet share the TCP/IP stack and default event loop. */
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
     ESP_LOGI(TAG, "Board: %s", bsp_board_name());
     ESP_LOGI(TAG, "Panel: %s", bsp_panel_name());
     ESP_LOGI(TAG, "Screen: %dx%d", bsp_get_screen_width(), bsp_get_screen_height());
@@ -50,9 +54,6 @@ void app_main(void) {
     /* Touch controller is selected independently in menuconfig. */
     ESP_ERROR_CHECK(touch_init(&touch));
 
-    /* Wi-Fi and Ethernet share the TCP/IP stack and default event loop. */
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /* Initialize Slot 0 before the Wi-Fi worker opens C6 SDIO on Slot 1. */
     sdcard_init();
