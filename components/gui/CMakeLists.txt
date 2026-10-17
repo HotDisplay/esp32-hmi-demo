@@ -1,3 +1,10 @@
+# @file CMakeLists.txt
+# @brief 注册 HMI 界面、服务及首页品牌图片资源。
+#
+# @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
+# @author Lee
+# @date 2026-10-17
+
 set(camera_requires "")
 if(IDF_TARGET STREQUAL "esp32p4")
     list(APPEND camera_requires esp_driver_i2c esp_driver_ppa)
@@ -10,6 +17,8 @@ idf_component_register(
          "ui/ui_theme.c"
          "ui/ui_common.c"
          "ui/ui_launcher.c"
+         "assets/ui_logo_wide.c"
+         "assets/ui_logo_compact.c"
          "ui/ui_touch.c"
          "ui/ui_wifi.c"
          "ui/ui_ethernet.c"
@@ -27,6 +36,7 @@ idf_component_register(
                  "app"
                  "ui"
                  "service"
+                 "assets"
     REQUIRES bsp
              esp_lcd
              esp_lcd_touch
