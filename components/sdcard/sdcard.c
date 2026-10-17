@@ -22,6 +22,22 @@
 
 static const char *TAG = "SDCARD_INIT";
 
+#if defined(BSP_SD_WIDTH) && CONFIG_ESP_HOSTED_SDIO_HOST_INTERFACE
+static esp_err_t sdcard_host_init(void) {
+    sdmmc_host_state_t state = {0};
+    esp_err_t ret = sdmmc_host_get_state(&state);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+    if (!state.host_initialized) {
+        ESP_LOGE(TAG, "ESP-Hosted SDMMC controller is not initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+    ESP_LOGI(TAG, "Reusing SDMMC controller initialized by ESP-Hosted");
+    return ESP_OK;
+}
+#endif
+
 esp_err_t sdcard_init(void) {
 #if !defined(BSP_SD_WIDTH)
     ESP_LOGW(TAG, "SD card pins are not defined for this board");
@@ -50,6 +66,10 @@ esp_err_t sdcard_init(void) {
 #if CONFIG_BSP_BOARD_ESP32P4_DEMO_A02
     /* BSP_SD1 is wired to Slot 0 IOMUX; Slot 1 belongs to C6 SDIO. */
     host.slot = SDMMC_HOST_SLOT_0;
+#endif
+#if CONFIG_ESP_HOSTED_SDIO_HOST_INTERFACE
+    /* Hosted initializes the shared controller before app_main(). */
+    host.init = sdcard_host_init;
 #endif
 
     sd_pwr_ctrl_ldo_config_t ldo_config = {
