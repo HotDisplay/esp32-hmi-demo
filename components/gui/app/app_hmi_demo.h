@@ -1,3 +1,11 @@
+/**
+ * @file app_hmi_demo.h
+ * @brief HMI 应用入口和首页功能页面枚举，顺序与菜单一致。
+ *
+ * @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
+ * @author Lee
+ * @date 2026-10-19
+ */
 #pragma once
 
 #ifdef __cplusplus
@@ -14,6 +22,7 @@ typedef enum {
     APP_SCREEN_SDCARD,
     APP_SCREEN_CAMERA,
     APP_SCREEN_SYSINFO,
+    APP_SCREEN_ABOUT,
     APP_SCREEN_COUNT,
 } app_screen_id_t;
 

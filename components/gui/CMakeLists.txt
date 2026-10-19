@@ -3,7 +3,7 @@
 #
 # @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
 # @author Lee
-# @date 2026-10-17
+# @date 2026-10-19
 
 set(camera_requires "")
 if(IDF_TARGET STREQUAL "esp32p4")
@@ -17,6 +17,8 @@ idf_component_register(
          "ui/ui_theme.c"
          "ui/ui_common.c"
          "ui/ui_launcher.c"
+         "ui/ui_brand.c"
+         "ui/ui_about.c"
          "assets/ui_logo_wide.c"
          "assets/ui_logo_compact.c"
          "ui/ui_touch.c"
@@ -47,7 +49,7 @@ idf_component_register(
              freertos
              wifi
              lvgl
-    PRIV_REQUIRES esp_timer ${camera_requires}
+    PRIV_REQUIRES esp_timer esp_app_format ${camera_requires}
 )
 
 idf_component_optional_requires(PRIVATE esp_video esp_cam_sensor)

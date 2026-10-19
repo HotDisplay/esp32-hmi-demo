@@ -1,3 +1,11 @@
+/**
+ * @file app_hmi_demo.c
+ * @brief 创建 HMI 首页并分派九个功能入口，统一管理返回首页的导航。
+ *
+ * @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
+ * @author Lee
+ * @date 2026-10-19
+ */
 #include "app_hmi_demo.h"
 
 #include "lvgl.h"
@@ -13,6 +21,7 @@
 #include "ui_sdcard.h"
 #include "ui_camera.h"
 #include "ui_sysinfo.h"
+#include "ui_about.h"
 
 static const char *TAG = "HMI_APP";
 
@@ -43,6 +52,7 @@ static void on_card_click(lv_event_t *e)
     case APP_SCREEN_SDCARD:   scr = ui_sdcard_create(on_back);   break;
     case APP_SCREEN_CAMERA:   scr = ui_camera_create(on_back);   break;
     case APP_SCREEN_SYSINFO:  scr = ui_sysinfo_create(on_back);  break;
+    case APP_SCREEN_ABOUT:    scr = ui_about_create(on_back);    break;
     default:
         ESP_LOGW(TAG, "unknown screen id: %d", id);
         return;

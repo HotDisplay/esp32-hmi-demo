@@ -4,13 +4,13 @@
  *
  * @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
  * @author Lee
- * @date 2026-10-17
+ * @date 2026-10-19
  *
  * 首页只负责界面展示和页面入口回调，不启动外设服务或轮询运行状态。
  */
 #include "ui_launcher.h"
 #include "ui_theme.h"
-#include "ui_brand_assets.h"
+#include "ui_brand.h"
 #include "app_hmi_demo.h"
 #include "sdkconfig.h"
 
@@ -30,6 +30,7 @@ static const launcher_item_t s_items[APP_SCREEN_COUNT] = {
     { "SD Card",    "Files & storage",    LV_SYMBOL_SD_CARD },
     { "Camera",     "CSI live preview",   LV_SYMBOL_VIDEO },
     { "System",     "Device information", LV_SYMBOL_SETTINGS },
+    { "About",      "Company info",        LV_SYMBOL_HOME },
 };
 
 /**
@@ -132,7 +133,8 @@ lv_obj_t *ui_launcher_create(lv_event_cb_t card_cb)
         pad = 12;
         gap = 10;
     }
-    int32_t columns = content_width >= 760 && width > height ? 4 : 2;
+    int32_t columns = content_width >= 960 && width > height ? 5 :
+                      content_width >= 760 && width > height ? 4 : 2;
     if (content_width < 400) {
         columns = 1;
     }
@@ -147,7 +149,8 @@ lv_obj_t *ui_launcher_create(lv_event_cb_t card_cb)
         grid_height = min_grid_height;
     }
     int32_t card_width = (content_width - pad * 2 - (columns - 1) * gap - (scroll ? 6 : 0)) / columns;
-    bool compact = (grid_height - (rows - 1) * gap) / rows < 140 || card_width < 180;
+    int32_t card_height = (grid_height - (rows - 1) * gap) / rows;
+    bool compact = card_height < 140 || card_width < 180;
 
     lv_obj_t *scr = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(scr, UI_COLOR_HOME_BG, 0);
@@ -169,27 +172,7 @@ lv_obj_t *ui_launcher_create(lv_event_cb_t card_cb)
     lv_obj_set_flex_flow(header, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(header, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-    /* 保留原图透明通道和图标颜色，不增加底板。 */
-    lv_obj_t *brand = lv_image_create(header);
-    lv_obj_clear_flag(brand, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
-    lv_image_set_src(brand, &ui_logo_compact);
-    lv_obj_set_size(brand, 128, 37);
-    lv_image_set_inner_align(brand, LV_IMAGE_ALIGN_CONTAIN);
-    lv_image_set_antialias(brand, true);
-
-    /* 裁剪起点位于图标和字标的空隙，只将深色字标覆盖为浅色。 */
-    lv_obj_t *wordmark = create_container(brand);
-    lv_obj_set_pos(wordmark, 36, 0);
-    lv_obj_set_size(wordmark, 92, 37);
-    lv_obj_t *wordmark_image = lv_image_create(wordmark);
-    lv_obj_clear_flag(wordmark_image, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
-    lv_image_set_src(wordmark_image, &ui_logo_compact);
-    lv_obj_set_pos(wordmark_image, -36, 0);
-    lv_obj_set_size(wordmark_image, 128, 37);
-    lv_image_set_inner_align(wordmark_image, LV_IMAGE_ALIGN_CONTAIN);
-    lv_image_set_antialias(wordmark_image, true);
-    lv_obj_set_style_image_recolor(wordmark_image, UI_COLOR_TEXT, 0);
-    lv_obj_set_style_image_recolor_opa(wordmark_image, LV_OPA_COVER, 0);
+    ui_brand_create_logo(header);
 
     lv_obj_t *device = create_container(header);
     lv_obj_set_size(device, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -237,19 +220,12 @@ lv_obj_t *ui_launcher_create(lv_event_cb_t card_cb)
     lv_obj_t *grid = create_container(viewport);
     lv_obj_set_size(grid, LV_PCT(100), grid_height);
     lv_obj_set_style_pad_gap(grid, gap, 0);
-    static const int32_t cols_1[] = { LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST };
-    static const int32_t cols_2[] = { LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST };
-    static const int32_t cols_4[] = { LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST };
-    static const int32_t rows_2[] = { LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST };
-    static const int32_t rows_4[] = { LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST };
-    static const int32_t rows_8[] = { LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
-                                    LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST };
-    lv_obj_set_grid_dsc_array(grid, columns == 4 ? cols_4 : columns == 2 ? cols_2 : cols_1,
-                              rows == 2 ? rows_2 : rows == 4 ? rows_4 : rows_8);
+    /* 按计算好的列数换行，支持新增入口，避免依赖固定行数的网格模板。 */
+    lv_obj_set_flex_flow(grid, LV_FLEX_FLOW_ROW_WRAP);
+    lv_obj_set_flex_align(grid, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
     for (int i = 0; i < APP_SCREEN_COUNT; i++) {
         lv_obj_t *card = create_card(grid, &s_items[i], i, card_cb, compact, card_width);
-        lv_obj_set_grid_cell(card, LV_GRID_ALIGN_STRETCH, i % columns, 1,
-                             LV_GRID_ALIGN_STRETCH, i / columns, 1);
+        lv_obj_set_size(card, card_width, card_height);
     }
 
     lv_obj_t *footer = create_container(cont);
