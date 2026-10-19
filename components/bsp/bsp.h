@@ -1,3 +1,11 @@
+/**
+ * @file bsp.h
+ * @brief 提供板级初始化、背光亮度及显示 / 触摸控制引脚接口。
+ *
+ * @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
+ * @author Lee
+ * @date 2026-10-19
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -75,6 +83,17 @@ esp_err_t bsp_touch_release_int(void);
  * only lit once a frame has been rendered. bsp_init() only configures the
  * backlight GPIO/PWM but keeps it OFF. */
 void bsp_backlight_enable(void);
+
+/**
+ * @brief 设置背光 PWM 亮度，需在 bsp_init() 后调用。
+ *
+ * @param brightness 亮度百分比，范围 0-100；0 关闭背光。
+ * @return ESP_OK 表示成功，ESP_ERR_INVALID_ARG 表示超出范围，其他错误由驱动返回。
+ */
+esp_err_t bsp_backlight_set_brightness(uint32_t brightness);
+
+/** @brief 返回最近一次成功设置的亮度百分比；背光初始关闭时为 0。 */
+uint32_t bsp_backlight_get_brightness(void);
 
 /* Hardware-reset the display panel (RST pin). No-op when the panel has no
  * dedicated reset wiring (the panel driver then performs a software reset). On

@@ -1,3 +1,11 @@
+/**
+ * @file bsp.c
+ * @brief 实现板级 IO 扩展器、背光 PWM 和显示 / 触摸控制引脚操作。
+ *
+ * @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
+ * @author Lee
+ * @date 2026-10-19
+ */
 #include "bsp.h"
 
 #include "esp_lcd_touch.h"
@@ -13,6 +21,7 @@
 #include "esp_io_expander_tca95xx_16bit.h"
 
 static const char *TAG = "BSP";
+static uint32_t s_backlight_brightness;
 
 #ifdef BSP_USE_IO_EXPANDER
 
@@ -150,25 +159,31 @@ static void bsp_backlight_init(void) {
         .duty = 0,
     };
     ledc_channel_config(&ledc_channel);
-
+    s_backlight_brightness = 0;
 }
 
-/* 设置背光亮度 */
-static void bsp_backlight_set(uint32_t level, uint32_t brightness) {
+esp_err_t bsp_backlight_set_brightness(uint32_t brightness) {
+    ESP_RETURN_ON_FALSE(brightness <= 100, ESP_ERR_INVALID_ARG, TAG, "brightness must be 0-100");
 #if BSP_BACKLIGHT_EN >= 0
-    gpio_set_level(BSP_BACKLIGHT_EN, level);
+    ESP_RETURN_ON_ERROR(gpio_set_level(BSP_BACKLIGHT_EN, LCD_BACKLIGHT_ON), TAG, "backlight enable");
 #endif
     uint32_t max_duty = (1U << LEDC_TIMER_10_BIT) - 1;
     uint32_t duty = max_duty * brightness / 100;
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+    ESP_RETURN_ON_ERROR(ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty), TAG, "backlight duty");
+    ESP_RETURN_ON_ERROR(ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0), TAG, "backlight update");
     ESP_LOGD(TAG, "duty:%d", duty);
-    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    s_backlight_brightness = brightness;
+    return ESP_OK;
+}
+
+uint32_t bsp_backlight_get_brightness(void) {
+    return s_backlight_brightness;
 }
 
 /* Turn the backlight ON. Call this only after LVGL has finished initializing,
  * so the panel is never lit with an unrendered frame. */
 void bsp_backlight_enable(void) {
-    bsp_backlight_set(LCD_BACKLIGHT_ON, 20);
+    bsp_backlight_set_brightness(60);
 }
 
 /* Touch controller initialization lives in the `touch` component
