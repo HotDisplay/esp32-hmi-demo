@@ -1,40 +1,35 @@
+/**
+ * @file display_test.c
+ * @brief 配置开启时上电独占 LCD 运行原生测试，不进入 GUI。
+ *
+ * @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
+ * @author Lee
+ * @date 2026-10-19
+ */
 #include "sdkconfig.h"
 
 #if CONFIG_DISPLAY_TEST_DEMO
-
 #include <stdint.h>
 #include <string.h>
 #include "display_test.h"
+#include "display_test_resource.h"
 #include "bsp.h"
 #include "esp_attr.h"
 #include "esp_check.h"
-#include "esp_partition.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
 #if CONFIG_DISPLAY_INTERFACE_RGB
-_Static_assert(RGB_LCD_DATA_BITS == 16, "LCD test requires RGB565");
 #define TEST_PIXEL_BYTES 2
 #else
 #include "esp_lcd_mipi_dsi.h"
-_Static_assert(PANEL_MIPI_COLOR_BITS == 24, "LCD test requires MIPI RGB888");
 #define TEST_PIXEL_BYTES 3
 #endif
 
-_Static_assert(LCD_NUM_FB == 2, "LCD test requires two frame buffers");
-
 static const char *TAG = "LCD_TEST";
 
-typedef struct {
-    char magic[8];
-    uint32_t width;
-    uint32_t height;
-    uint32_t pixel_bytes;
-    uint32_t payload_bytes;
-} image_header_t;
-
-_Static_assert(sizeof(image_header_t) == 24, "Invalid image header layout");
+_Static_assert(LCD_NUM_FB == 2, "LCD test requires two frame buffers");
 
 #if CONFIG_DISPLAY_INTERFACE_RGB
 static bool IRAM_ATTR frame_done(esp_lcd_panel_handle_t panel,
@@ -65,9 +60,8 @@ static esp_err_t present(esp_lcd_panel_handle_t panel, void *fb, SemaphoreHandle
 
 static void fill_pattern(void *fb, unsigned pattern)
 {
-    static const uint8_t colors[][3] = {
-        {255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 255},
-    };
+    uint32_t colors[16];
+    for (unsigned i = 0; i < 16; i++) colors[i] = display_test_pattern_color(pattern, i);
     for (unsigned y = 0; y < LCD_V_RES; y++) {
 #if CONFIG_DISPLAY_INTERFACE_RGB
         uint16_t *row = (uint16_t *)fb + y * LCD_H_RES;
@@ -77,10 +71,11 @@ static void fill_pattern(void *fb, unsigned pattern)
 #endif
         for (unsigned x = 0; x < LCD_H_RES; x++) {
             /* Landscape: vertical bands. Portrait: horizontal bands. */
-            uint8_t gray = (LCD_H_RES >= LCD_V_RES ? x * 16 / LCD_H_RES : y * 16 / LCD_V_RES) * 255 / 15;
-            uint8_t r = pattern == 4 ? gray : colors[pattern][0];
-            uint8_t g = pattern == 4 ? gray : colors[pattern][1];
-            uint8_t b = pattern == 4 ? gray : colors[pattern][2];
+            unsigned level = LCD_H_RES >= LCD_V_RES ? x * 16 / LCD_H_RES : y * 16 / LCD_V_RES;
+            uint32_t color = colors[level];
+            uint8_t r = color >> 16;
+            uint8_t g = color >> 8;
+            uint8_t b = color;
 #if CONFIG_DISPLAY_INTERFACE_RGB
             row[x] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
 #else
@@ -90,43 +85,6 @@ static void fill_pattern(void *fb, unsigned pattern)
 #endif
         }
     }
-}
-
-static const uint8_t *find_image(esp_partition_mmap_handle_t *map_handle)
-{
-    const esp_partition_t *partition = esp_partition_find_first(
-        ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "lcd_image");
-    const size_t image_size = LCD_H_RES * LCD_V_RES * TEST_PIXEL_BYTES;
-    *map_handle = 0;
-    if (!partition || partition->size < sizeof(image_header_t) + image_size) {
-        ESP_LOGI(TAG, "No test image; skip image stage");
-        return NULL;
-    }
-
-    /* SPI1 reads suspend cache/interrupts and starve RGB bounce buffers.
-     * Keep the image mapped so copying uses the cache without that suspension. */
-    const void *mapped = NULL;
-    esp_err_t err = esp_partition_mmap(partition, 0, sizeof(image_header_t) + image_size,
-                                      ESP_PARTITION_MMAP_DATA, &mapped, map_handle);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "Cannot map test image: %s; skip image stage", esp_err_to_name(err));
-        return NULL;
-    }
-    const image_header_t *header = mapped;
-    if (memcmp(header->magic, "LCDTEST1", 8) != 0 || header->payload_bytes == 0) {
-        esp_partition_munmap(*map_handle);
-        *map_handle = 0;
-        ESP_LOGI(TAG, "No test image; skip image stage");
-        return NULL;
-    }
-    if (header->width != LCD_H_RES || header->height != LCD_V_RES ||
-        header->pixel_bytes != TEST_PIXEL_BYTES || header->payload_bytes != image_size) {
-        esp_partition_munmap(*map_handle);
-        *map_handle = 0;
-        ESP_LOGW(TAG, "Image does not match panel; rebuild and run idf.py flash");
-        return NULL;
-    }
-    return (const uint8_t *)mapped + sizeof(image_header_t);
 }
 
 esp_err_t display_test_run(esp_lcd_panel_handle_t panel)
@@ -154,24 +112,21 @@ esp_err_t display_test_run(esp_lcd_panel_handle_t panel)
         return err;
     }
 
-    esp_partition_mmap_handle_t image_map = 0;
-    const uint8_t *image = find_image(&image_map);
-    const char *names[] = {"red", "green", "blue", "white", "grayscale", "image"};
+    display_test_image_t image;
+    display_test_image_open(&image);
     unsigned next_fb = 1; /* The driver initially scans fb[0]. */
     bool backlight_on = false;
     while (true) {
-        for (unsigned stage = 0; stage < (image ? 6 : 5); stage++) {
-            ESP_LOGI(TAG, "%s (%dx%d)", names[stage], LCD_H_RES, LCD_V_RES);
-            if (stage == 5) {
-                memcpy(fb[next_fb], image, LCD_H_RES * LCD_V_RES * TEST_PIXEL_BYTES);
+        for (unsigned stage = 0; stage < (image.pixels ? DISPLAY_TEST_PATTERN_COUNT : DISPLAY_TEST_IMAGE); stage++) {
+            ESP_LOGI(TAG, "%s (%dx%d)", display_test_pattern_names[stage], LCD_H_RES, LCD_V_RES);
+            if (stage == DISPLAY_TEST_IMAGE) {
+                memcpy(fb[next_fb], image.pixels, LCD_H_RES * LCD_V_RES * TEST_PIXEL_BYTES);
             } else {
                 fill_pattern(fb[next_fb], stage);
             }
             err = present(panel, fb[next_fb], done);
             if (err != ESP_OK) {
-                if (image) {
-                    esp_partition_munmap(image_map);
-                }
+                display_test_image_close(&image);
                 /* The caller aborts on failure; keep the callback context alive. */
                 return err;
             }

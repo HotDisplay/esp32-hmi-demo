@@ -6,6 +6,8 @@
 没有图片时跳过图片画面，红、绿、蓝、白、16 级灰阶各显示 1 秒，持续循环。
 灰阶横屏显示竖条（左黑右白），竖屏显示横条（上黑下白），按屏幕宽高自动切换。
 
-打开 `idf.py menuconfig → Display Test Demo → Run native LCD test instead of LVGL` 启用；关闭则运行原有 LVGL 界面。
+HMI 首页点击第一个入口 `Display Test`，在控制页按 `Start Test` 启动；全屏测试时触摸任意位置停止。
+也可打开 `idf.py menuconfig → Display Test Demo → Run native LCD test instead of LVGL`，开机直接运行原生测试。
+两种方式共用本文件夹的图片和同一个 `lcd_image` 分区。
 有图片时编译使用 ESP-IDF Python 环境中的 Pillow：`python -m pip install Pillow`。
 图片保存在新增的 4 MiB `lcd_image` 分区，不占用应用分区；工程需要至少 8 MB Flash。

@@ -1,9 +1,19 @@
 
+# @file Kconfig.projbuild
+# @brief 选择上电原生显示测试，或进入带手动测试入口的 HMI。
+#
+# @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
+# @author Lee
+# @date 2026-10-19
+
 menu "Display Test Demo"
     config DISPLAY_TEST_DEMO
         bool "Run native LCD test instead of LVGL"
         default n
         help
+            When enabled, run the native LCD test immediately at boot and
+            skip the HMI GUI. When disabled, start the HMI; its Display Test
+            application can be started manually with the Start Test button.
             Loop red, green, blue, white, 16 grayscale bands and
             an optional image, one second each. Touch and LVGL are not started.
             Grayscale bands are vertical on landscape panels and horizontal

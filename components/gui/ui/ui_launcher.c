@@ -22,6 +22,7 @@ typedef struct {
 
 /** @brief 功能入口描述；数组索引必须与 app_screen_id_t 的枚举值一致。 */
 static const launcher_item_t s_items[APP_SCREEN_COUNT] = {
+    { "Display Test", "Colors & grayscale", LV_SYMBOL_IMAGE },
     { "Touch",      "Draw & test",        LV_SYMBOL_EDIT },
     { "Wi-Fi",      "Scan & connect",     LV_SYMBOL_WIFI },
     { "Ethernet",   "Link & IP address",  LV_SYMBOL_SHUFFLE },
@@ -220,7 +221,7 @@ lv_obj_t *ui_launcher_create(lv_event_cb_t card_cb)
     lv_obj_t *grid = create_container(viewport);
     lv_obj_set_size(grid, LV_PCT(100), grid_height);
     lv_obj_set_style_pad_gap(grid, gap, 0);
-    /* 按计算好的列数换行，支持新增入口，避免依赖固定行数的网格模板。 */
+    /* 按计算好的列数换行，支持十个入口，避免依赖固定行数的网格模板。 */
     lv_obj_set_flex_flow(grid, LV_FLEX_FLOW_ROW_WRAP);
     lv_obj_set_flex_align(grid, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
     for (int i = 0; i < APP_SCREEN_COUNT; i++) {

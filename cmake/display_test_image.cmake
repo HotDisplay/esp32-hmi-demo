@@ -1,6 +1,9 @@
-if(NOT CONFIG_DISPLAY_TEST_DEMO)
-    return()
-endif()
+# @file display_test_image.cmake
+# @brief 为 GUI 和原生显示测试生成图片分区，完整烧录时更新图片内容。
+#
+# @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
+# @author Lee
+# @date 2026-10-19
 
 if(CONFIG_DISPLAY_INTERFACE_RGB)
     set(image_interface RGB)

@@ -14,7 +14,8 @@ extern "C" {
 
 /* 功能页 ID，与主菜单卡片顺序一致 */
 typedef enum {
-    APP_SCREEN_TOUCH = 0,
+    APP_SCREEN_DISPLAY_TEST = 0,
+    APP_SCREEN_TOUCH,
     APP_SCREEN_WIFI,
     APP_SCREEN_ETHERNET,
     APP_SCREEN_USB,

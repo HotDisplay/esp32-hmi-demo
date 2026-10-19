@@ -18,6 +18,7 @@ idf_component_register(
          "ui/ui_common.c"
          "ui/ui_launcher.c"
          "ui/ui_brand.c"
+         "ui/ui_display_test.c"
          "ui/ui_about.c"
          "assets/ui_logo_wide.c"
          "assets/ui_logo_compact.c"
@@ -40,6 +41,7 @@ idf_component_register(
                  "service"
                  "assets"
     REQUIRES bsp
+             display
              esp_lcd
              esp_lcd_touch
              esp_netif

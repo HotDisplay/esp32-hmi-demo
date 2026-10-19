@@ -1,6 +1,6 @@
 /**
  * @file app_hmi_demo.c
- * @brief 创建 HMI 首页并分派九个功能入口，统一管理返回首页的导航。
+ * @brief 创建 HMI 首页并分派十个功能入口，统一管理返回首页的导航。
  *
  * @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
  * @author Lee
@@ -21,6 +21,7 @@
 #include "ui_sdcard.h"
 #include "ui_camera.h"
 #include "ui_sysinfo.h"
+#include "ui_display_test.h"
 #include "ui_about.h"
 
 static const char *TAG = "HMI_APP";
@@ -44,6 +45,7 @@ static void on_card_click(lv_event_t *e)
     lv_obj_t *scr = NULL;
 
     switch (id) {
+    case APP_SCREEN_DISPLAY_TEST: scr = ui_display_test_create(on_back); break;
     case APP_SCREEN_TOUCH:    scr = ui_touch_create(on_back);    break;
     case APP_SCREEN_WIFI:     scr = ui_wifi_create(on_back);     break;
     case APP_SCREEN_ETHERNET: scr = ui_ethernet_create(on_back); break;

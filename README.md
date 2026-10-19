@@ -10,6 +10,7 @@ HOTLCD HMI 演示工程，支持 ESP32-S3 的 RGB 显示和 ESP32-P4 的 RGB / M
 - 安装并激活 **ESP-IDF v6.0** 开发环境。
 - 使用带 PSRAM、Flash 容量至少 8 MB 的对应板型，连接匹配的显示屏。
 - 首次编译需要联网下载组件；Flash / PSRAM 的容量、类型和频率应与实际硬件一致。
+- `main/images/` 中有测试图片时，先在 ESP-IDF Python 环境执行 `python -m pip install Pillow`，用于构建 GUI 和原生测试共用的图片分区。
 
 在工程根目录执行：
 
@@ -71,6 +72,7 @@ ESP32-S3 板将第一条命令改为 `idf.py set-target esp32s3`。将 `COM3` �
 
 | 页面 | 使用说明 |
 |------|----------|
+| Display Test | 点击 `Start Test` 后全屏循环显示纯色、灰阶和可选图片，每个画面 1 秒；触摸任意位置停止，回到控制页后可返回首页 |
 | Touch | 按住并移动手指画线，显示 X / Y 坐标；`Clear` 清空。保留真实采样轨迹，不做曲线平滑 |
 | Wi-Fi | 查看连接状态、IP 和信号强度，扫描和切换无线网络 |
 | Ethernet | 查看链路状态、IP、网关和掩码；连接网线后通过 DHCP 获取地址 |
@@ -147,10 +149,17 @@ DEMO-A02 使用 BSP_SD1 / SDMMC Slot 0，挂载目录为 `/sdcard`，与 C6 的 
 `main/main.c` 在启动时调用 `sdcard_init()` 挂载 SD 卡，SD Card 页面只查询挂载状态和文件。
 插卡后重新启动板子，再进入页面查看；当前 S3 板型未定义 SD 卡引脚，不提供该功能。
 
-## 原生 LCD 测试
+## 显示屏测试
 
-启用 `Display Test Demo → Run native LCD test instead of LVGL` 后，不启动 HMI、触摸或网络，
-按以下顺序循环，每个画面显示 **1 秒**：
+首页的第一个入口 `Display Test` 使用 LVGL 显示测试画面，与 RGB / MIPI 的现有刷新同步机制共用显示通道。
+进入页面后点击 `Start Test` 开始；测试期间隐藏界面和性能统计，触摸任意位置停止。
+测试控制页可通过 `Brightness` 滑块实时调节 PWM 背光亮度（0–100%），`Back` 返回首页；调整值保留到本次运行结束。
+About 关于我们位于首页最后一个入口。
+
+### 原生模式
+
+也可启用 `Display Test Demo → Run native LCD test instead of LVGL`，从启动直接进入原生测试，不启动 HMI 或触摸。
+GUI 和原生模式按相同顺序循环，每个画面显示 **1 秒**：
 
 **红 → 绿 → 蓝 → 白 → 16 级灰阶 → 图片（可选）**
 
