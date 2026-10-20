@@ -4,7 +4,7 @@
 #
 # @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
 # @author Lee
-# @date 2026-10-19
+# @date 2026-10-20
 
 menu "Display Test Demo"
     config DISPLAY_TEST_DEMO
@@ -14,9 +14,10 @@ menu "Display Test Demo"
             When enabled, run the native LCD test immediately at boot and
             skip the HMI GUI. When disabled, start the HMI; its Display Test
             application can be started manually with the Start Test button.
-            Loop red, green, blue, white, 16 grayscale bands and
-            an optional image, one second each. Touch and LVGL are not started.
-            Grayscale bands are vertical on landscape panels and horizontal
+            Loop red, green, blue, white, 16 grayscale bands, 16 color bars,
+            a black/white checkerboard and an optional image, one second each.
+            Touch and LVGL are not started.
+            Grayscale and color bars are vertical on landscape panels and horizontal
             on portrait panels, determined by the selected panel resolution.
             Put test.png, test.jpg or test.bmp in main/images before building.
 endmenu

@@ -4,7 +4,7 @@
  *
  * @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
  * @author Lee
- * @date 2026-10-19
+ * @date 2026-10-20
  */
 #include "sdkconfig.h"
 
@@ -60,8 +60,11 @@ static esp_err_t present(esp_lcd_panel_handle_t panel, void *fb, SemaphoreHandle
 
 static void fill_pattern(void *fb, unsigned pattern)
 {
+    unsigned count = pattern == DISPLAY_TEST_GRAYSCALE ? 16 :
+                     pattern == DISPLAY_TEST_COLOR_BARS ? DISPLAY_TEST_COLOR_BAR_COUNT :
+                     pattern == DISPLAY_TEST_CHECKERBOARD ? 2 : 1;
     uint32_t colors[16];
-    for (unsigned i = 0; i < 16; i++) colors[i] = display_test_pattern_color(pattern, i);
+    for (unsigned i = 0; i < count; i++) colors[i] = display_test_pattern_color(pattern, i);
     for (unsigned y = 0; y < LCD_V_RES; y++) {
 #if CONFIG_DISPLAY_INTERFACE_RGB
         uint16_t *row = (uint16_t *)fb + y * LCD_H_RES;
@@ -71,7 +74,9 @@ static void fill_pattern(void *fb, unsigned pattern)
 #endif
         for (unsigned x = 0; x < LCD_H_RES; x++) {
             /* Landscape: vertical bands. Portrait: horizontal bands. */
-            unsigned level = LCD_H_RES >= LCD_V_RES ? x * 16 / LCD_H_RES : y * 16 / LCD_V_RES;
+            unsigned level = pattern == DISPLAY_TEST_CHECKERBOARD ?
+                (x / DISPLAY_TEST_CHECKER_SIZE + y / DISPLAY_TEST_CHECKER_SIZE) & 1 :
+                LCD_H_RES >= LCD_V_RES ? x * count / LCD_H_RES : y * count / LCD_V_RES;
             uint32_t color = colors[level];
             uint8_t r = color >> 16;
             uint8_t g = color >> 8;

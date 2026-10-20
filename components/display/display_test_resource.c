@@ -4,7 +4,7 @@
  *
  * @copyright Copyright (c) 2026 Hot Display Technology Co.,Ltd
  * @author Lee
- * @date 2026-10-19
+ * @date 2026-10-20
  */
 #include "sdkconfig.h"
 #include <stdint.h>
@@ -35,17 +35,27 @@ typedef struct {
 _Static_assert(sizeof(image_header_t) == 24, "Invalid image header layout");
 
 const char *const display_test_pattern_names[DISPLAY_TEST_PATTERN_COUNT] = {
-    "red", "green", "blue", "white", "grayscale", "image",
+    "red", "green", "blue", "white", "grayscale", "color bars", "checkerboard", "image",
 };
 
-uint32_t display_test_pattern_color(unsigned pattern, unsigned gray_level)
+uint32_t display_test_pattern_color(unsigned pattern, unsigned index)
 {
     static const uint32_t colors[] = {0xff0000, 0x00ff00, 0x0000ff, 0xffffff};
+    static const uint32_t bars[] = {
+        0xffffff, 0xffff00, 0xffbf00, 0xff8000, 0xff0000, 0xff0080, 0xff00ff, 0x8000ff,
+        0x0000ff, 0x0080ff, 0x00ffff, 0x00ff80, 0x00ff00, 0x80ff00, 0x808080, 0x000000,
+    };
     if (pattern < DISPLAY_TEST_GRAYSCALE) {
         return colors[pattern];
     }
-    if (gray_level > 15) gray_level = 15;
-    return (gray_level * 255 / 15) * 0x010101U;
+    if (pattern == DISPLAY_TEST_COLOR_BARS) {
+        return bars[index < DISPLAY_TEST_COLOR_BAR_COUNT ? index : DISPLAY_TEST_COLOR_BAR_COUNT - 1];
+    }
+    if (pattern == DISPLAY_TEST_CHECKERBOARD) {
+        return index & 1 ? 0xffffff : 0x000000;
+    }
+    if (index > 15) index = 15;
+    return (index * 255 / 15) * 0x010101U;
 }
 
 bool display_test_image_open(display_test_image_t *image)
